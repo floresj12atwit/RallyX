@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\external\imgui\imgui.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\imgui\imgui_demo.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\imgui\imgui_draw.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\imgui\imgui_stdlib.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\imgui\imgui_tables.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\imgui\rlImGui.cpp">
+      <Filter>External</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\external\imgui\extras\FA6FreeSolidFontData.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\extras\IconsFontAwesome6.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imconfig.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imgui.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imgui_impl_raylib.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imgui_internal.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imgui_stdlib.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imstb_rectpack.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imstb_textedit.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imstb_truetype.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\raygui.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\raylib.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\rlgl.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\rlImGui.h">
+      <Filter>External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\rlImGuiColors.h">
+      <Filter>External</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="External">
+      <UniqueIdentifier>{51c15819-e91b-4b06-83ab-c8cc21ab071b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
