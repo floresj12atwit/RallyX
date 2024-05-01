@@ -5,7 +5,7 @@ This repository contains a minimal C++ project that can be used as "blank" start
 
 ## Usage
 
-Each project contains two ways to build the executable:
+The project contains two ways to build the executable:
 
 * A `makefile` intended for use with Mac and Linux
 * A preconfigured Visual Studio project intended for use with Windows
