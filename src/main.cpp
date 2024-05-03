@@ -18,6 +18,7 @@ int main(void)
     const int screenHeight = 900;
 
     //initialize OpenGL window through raylib
+    SetConfigFlags(FLAG_WINDOW_HIGHDPI);
     InitWindow(screenWidth, screenHeight, "Minimal Project");
     //initialize ImGui support with raylib
     rlImGuiSetup(true);
