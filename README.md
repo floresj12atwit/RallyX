@@ -1,7 +1,7 @@
-# Minimal Project for Game Engine Development
+# Final Project for Game Engine Development
 
 ## Purpose
-This repository contains a minimal C++ project that can be used as "blank" starter code for the Game Engine Development course.  The project has raylib (https://www.raylib.com/) configured for graphics and user input and Dear ImGui (https://github.com/ocornut/imgui) for debug GUI.
+This repository contains a minimal C++ project that can be used as "blank" starter code for the Game Engine Development Final Project.  The project has raylib (https://www.raylib.com/) configured for graphics and user input and Dear ImGui (https://github.com/ocornut/imgui) for debug GUI.
 
 ## Usage
 
