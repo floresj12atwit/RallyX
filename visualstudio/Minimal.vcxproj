@@ -138,7 +138,19 @@
     <ClCompile Include="..\external\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\external\imgui\rlImGui.cpp" />
+    <ClCompile Include="..\src\action.cpp" />
+    <ClCompile Include="..\src\animation.cpp" />
+    <ClCompile Include="..\src\assets.cpp" />
+    <ClCompile Include="..\src\components.cpp" />
+    <ClCompile Include="..\src\entity.cpp" />
+    <ClCompile Include="..\src\entitymanager.cpp" />
+    <ClCompile Include="..\src\gameengine.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\physics.cpp" />
+    <ClCompile Include="..\src\scene.cpp" />
+    <ClCompile Include="..\src\scenemenu.cpp" />
+    <ClCompile Include="..\src\sceneplay.cpp" />
+    <ClCompile Include="..\src\vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\imgui\extras\FA6FreeSolidFontData.h" />
@@ -156,6 +168,18 @@
     <ClInclude Include="..\external\include\raygui.h" />
     <ClInclude Include="..\external\include\raylib.h" />
     <ClInclude Include="..\external\include\rlgl.h" />
+    <ClInclude Include="..\src\action.hpp" />
+    <ClInclude Include="..\src\animation.hpp" />
+    <ClInclude Include="..\src\assets.hpp" />
+    <ClInclude Include="..\src\components.hpp" />
+    <ClInclude Include="..\src\entity.hpp" />
+    <ClInclude Include="..\src\entitymanager.hpp" />
+    <ClInclude Include="..\src\gameengine.hpp" />
+    <ClInclude Include="..\src\physics.hpp" />
+    <ClInclude Include="..\src\scene.hpp" />
+    <ClInclude Include="..\src\scenemenu.hpp" />
+    <ClInclude Include="..\src\sceneplay.hpp" />
+    <ClInclude Include="..\src\vec2.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

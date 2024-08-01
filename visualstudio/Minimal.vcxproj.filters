@@ -1,78 +1,158 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\external\imgui\imgui.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_demo.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_draw.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_stdlib.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_tables.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClCompile>
     <ClCompile Include="..\external\imgui\rlImGui.cpp">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\action.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\animation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\assets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\components.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\entitymanager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gameengine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scenemenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\sceneplay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vec2.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\imgui\extras\FA6FreeSolidFontData.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\extras\IconsFontAwesome6.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imconfig.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_impl_raylib.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_internal.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_stdlib.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_rectpack.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_textedit.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_truetype.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\include\raygui.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\include\raylib.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\include\rlgl.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\rlImGui.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\rlImGuiColors.h">
-      <Filter>External</Filter>
+      <Filter>Header Files\External</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\gameengine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\action.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\animation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\assets.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\components.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\entity.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\entitymanager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\physics.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\scene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\scenemenu.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\sceneplay.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vec2.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="External">
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0ead7037-f398-4169-9d08-8c241ac9b276}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{053a6f47-5895-4ec6-b2e2-1a1993726235}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\External">
       <UniqueIdentifier>{51c15819-e91b-4b06-83ab-c8cc21ab071b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

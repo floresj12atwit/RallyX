@@ -1,0 +1,1293 @@
+#include "sceneplay.hpp"
+#include "scenemenu.hpp"
+#include <fstream>
+#include <iostream>
+#include <cstdio>
+#include "physics.hpp"
+
+
+
+/**
+ * Constructor for the Play Scene
+ * 
+ * @param gameEngine raw pointer to the game engine class
+ * @param levelPath Path to level defintion file, relative to exe
+ */
+ScenePlay::ScenePlay(GameEngine* gameEngine, std::string levelPath):Scene(gameEngine){
+    this->levelPath=levelPath;
+    init(this->levelPath);
+}
+
+/**
+ * Functions that initializes the scene:
+ * 
+ * 1. Loads Level information
+ * 2. Spawns Players  
+ * 3. Registers input action  
+ * 4. Sets up camera  
+ * 
+ * @param levelPath Path to level defintion file, relative to exe
+ */
+void ScenePlay::init(const std::string& levelPath){
+    loadLevel(levelPath);
+    spawnPlayer();
+
+    //TODO: Add actions for UP, DOWN, LEFT, RIGHT, and ATTACK
+    registerAction(KEY_B,"BB");
+    registerAction(KEY_G,"GRID");
+    registerAction(KEY_T,"TEX");
+    registerAction(KEY_H,"HEALTH");
+    registerAction(KEY_V,"VISION");
+    registerAction(KEY_ESCAPE,"QUIT");
+    registerAction(KEY_R,"RELOAD");
+
+    //Adding movement actions
+    registerAction(KEY_W, "UP");
+    registerAction(KEY_A, "LEFT");
+    registerAction(KEY_S, "DOWN");
+    registerAction(KEY_D, "RIGHT"); 
+    registerAction(KEY_SPACE, "ATTACK");
+
+
+    
+    mainCamera=Camera2D({gameEngine->getWidth()/2,gameEngine->getHeight()/2},{gameEngine->getWidth()/2,gameEngine->getHeight()/2},0,1);
+
+}
+
+/**
+ * Loads level information from level definition file.
+ * 
+ * Once loaded, the correct entity type is created and setup.
+ * 
+ * @param levelPath Path to level defintion file, relative to exe
+ */
+void ScenePlay::loadLevel(const std::string& levelPath){
+    //TODO: Add the reading of the level file (Modify what you did from Assignment 3)
+
+    std::ifstream file(levelPath);
+    std::string str;
+    std::string type;
+    
+
+    
+    while (file.good()) {
+        file >> str;
+        if (str == "TILE") {
+            
+            int RoomX, RoomY, GridX, GridY;
+            file >> type >> RoomX >> RoomY >> GridX >> GridY;
+            auto e = entityManager.addEntity(str, type);
+            e->addComponent<CAnimation>(gameEngine->getAssets().getAnimation(type), true);
+            float scaledX = gameEngine->getAssets().getAnimation(type).getScaledSize().x;
+            float scaledY = gameEngine->getAssets().getAnimation(type).getScaledSize().y;
+            float tileSizeX = gameEngine->getTileSizeX();
+            float tileSizeY = gameEngine->getTileSizeY();
+            float bboxSizeX = tileSizeX;
+            float bboxSizeY = tileSizeY;
+            if (scaledX > tileSizeX || scaledY > tileSizeY) {
+                bboxSizeX = scaledX;
+                bboxSizeY = scaledY;
+            }
+            e->addComponent<CBoundingBox>(Vec2(bboxSizeX, bboxSizeY));    //we need to set true because these tiles block vision
+            e->getComponent<CBoundingBox>().blocksVision = true;
+            Vec2 tileWorldPosition = getPosition(RoomX, RoomY, GridX, GridY);
+
+
+            int newGridX = tileWorldPosition.x / gameEngine->getTileSizeX();
+            int newGridY = tileWorldPosition.y / gameEngine->getTileSizeY();
+
+            
+            // Get the center pixel position adjusted for the entity size
+            Vec2 pos = gridToMidPixel(newGridX, newGridY, e);
+
+            e->addComponent<CTransform>(Vec2(pos.x, pos.y), Vec2(0.0f, 0.0f), 0.0f);
+            e->getComponent<CTransform>().prevPosition.x = pos.x;
+            e->getComponent<CTransform>().prevPosition.y = pos.y;
+        }
+        if (str == "PLAYER") {
+            file >> playerConfig.X >> playerConfig.Y >> playerConfig.BX >> playerConfig.BY >> playerConfig.SPEED >> playerConfig.HEALTH >> playerConfig.WEAPON;
+        }
+        if (str == "ENEMY") {
+            std::string enemyName, AIType;
+            int RoomX, RoomY, GridX, GridY, Speed, Health, NP;
+            
+
+            file >> enemyName >> AIType >> RoomX >> RoomY >> GridX >> GridY >> Speed >> Health;
+
+            
+
+
+                auto e = entityManager.addEntity("DYNAMIC", str);
+                std::cout << enemyName << std::endl;
+                e->addComponent<CAnimation>(gameEngine->getAssets().getAnimation(enemyName), true);
+                float scaledX = gameEngine->getAssets().getAnimation(enemyName).getScaledSize().x;
+                float scaledY = gameEngine->getAssets().getAnimation(enemyName).getScaledSize().y;
+                float tileSizeX = gameEngine->getTileSizeX();
+                float tileSizeY = gameEngine->getTileSizeY();
+                float bboxSizeX = tileSizeX;
+                float bboxSizeY = tileSizeY;
+                if (scaledX > tileSizeX || scaledY > tileSizeY) {
+                    bboxSizeX = scaledX;
+                    bboxSizeY = scaledY;
+                }
+                e->addComponent<CBoundingBox>(Vec2(bboxSizeX, bboxSizeY));
+                
+                Vec2 tileWorldPosition = getPosition(RoomX, RoomY, GridX, GridY);
+
+
+                int newGridX = tileWorldPosition.x / gameEngine->getTileSizeX();
+                int newGridY = tileWorldPosition.y / gameEngine->getTileSizeY();
+
+
+                // Get the center pixel position adjusted for the entity size
+                Vec2 pos = gridToMidPixel(newGridX, newGridY, e);
+
+                //pos.y -= scaledY;
+                e->addComponent<CTransform>(Vec2(pos.x, pos.y), Vec2(0.0f, 0.0f), 0.0f);
+                e->getComponent<CTransform>().prevPosition.x = pos.x;
+                e->getComponent<CTransform>().prevPosition.y = pos.y;
+                e->getComponent<CTransform>().velocity.x = Speed;
+                e->getComponent<CTransform>().velocity.y = Speed;
+                e->addComponent<CHealth>(Health,Health);
+                e->addComponent<CDamage>();
+                //e->addComponent<CInvincibility>();
+                
+                e->addComponent<CState>();
+
+              
+                
+            //Edit this so that patrol points get placed in correct room that entity is placed
+            if (AIType == "PATROL") {
+                file >> NP;
+                std::vector<Vec2> patrolPoints(NP);
+                for (int i = 0; i < NP; ++i) {
+                    int px, py;
+                    file >> px >> py;
+                    Vec2 noRoom;
+                    //Figure out what's going on here its wrong in the Y direction
+                    //Vec2 worldPos = getPosition(RoomX, RoomY, px, py);
+
+                    Vec2 tileWorldPosition = getPosition(RoomX, RoomY, px, py);
+
+
+                    int newGridX = tileWorldPosition.x / gameEngine->getTileSizeX();
+                    int newGridY = tileWorldPosition.y / gameEngine->getTileSizeY();
+
+
+                    // Get the center pixel position adjusted for the entity size
+                    Vec2 pos = gridToMidPixel(newGridX, newGridY, e);
+                    patrolPoints[i] = pos; // Put the points in the correct world position
+                    //patrolPoints[i] = getPosition(RoomX, RoomY, noRoom.x, noRoom.y);
+
+                }
+                e->addComponent<CPatrol>(patrolPoints, Speed);
+            }
+            else {
+                e->addComponent<CFollowPlayer>(); //Initalize this to nothing and then when game loop starts make this enemy move towards player
+                e->getComponent<CFollowPlayer>().speed = Speed;
+            }
+            
+            
+
+           
+
+        }
+        
+    }
+
+}
+/*
+Animation LINKSTANDD LINKSTANDD 1 1 4
+Animation LINKSTANDR LINKSTANDR 1 1 4
+Animation LINKSTANDU LINKSTANDU 1 1 4
+Animation LINKUSED LINKUSED 1 1 4
+Animation LINKUSER LINKUSER 1 1 4
+Animation LINKUSEU LINKUSEU 1 1 4
+Animation LINKWALKD LINKWALKD 2 5 4
+Animation LINKWALKR LINKWALKR 2 5 4
+Animation LINKWALKU LINKWALKU 2 5 4
+
+
+
+*/
+/**
+ * Animation System
+ * 
+ * For the player: Sets the state and animation depending on user input.
+ * For other entities: Updates the animation via the CAnimation component.
+ *
+ */
+void ScenePlay::sAnimation(){
+    //TODO: Based on the current state and user input, change the animation of the player
+    
+    CState& state = player->getComponent<CState>();
+    CInput& input = player->getComponent<CInput>();
+    CAnimation& animationComponent = player->getComponent<CAnimation>();
+
+    static int attackFrameCount = 0;
+    
+
+    std::string lastAnimation;
+    std::string newAnimation;       //Copied this from last project just update the string don't make a new animation
+    static std::string lastDirection;   //Making this a static variable helped to ensure the player would actually stop in its last animation
+        //Clever way to get ensure the last movement player made is where he stops
+
+    // Determine the direction to move based on priority
+    if (input.left && !input.right) {
+        newAnimation = "RALLYXPLAYERRIGHT";
+        lastDirection = "L";
+    }
+    else if (input.right && !input.left) {
+        newAnimation = "RALLYXPLAYERRIGHT";
+        lastDirection = "R";
+    }
+    else if (input.up && !input.down) {
+        newAnimation = "RALLYXPLAYERUP";
+        lastDirection = "U";
+    }
+    else if (input.down && !input.up) {
+        newAnimation = "RALLYXPLAYERDOWN";
+        lastDirection = "D";
+    }
+    else {
+        // If no direction is pressed, continue in the last direction or set idle
+        if (lastDirection == "L") {
+            newAnimation = "RALLYXPLAYERRIGHT";
+        }
+        else if (lastDirection == "R") {
+            newAnimation = "RALLYXPLAYERRIGHT";
+        }
+        else if (lastDirection == "U") {
+            newAnimation = "RALLYXPLAYERUP";
+        }
+        else if (lastDirection == "D") {
+            newAnimation = "RALLYXPLAYERDOWN";
+        }
+    }
+
+
+ 
+    
+    //std::cout << frameCounter << std::endl;
+   
+
+    if (!newAnimation.empty() && animationComponent.animation.getName() != newAnimation) {
+        
+        
+        animationComponent.animation = gameEngine->getAssets().getAnimation(newAnimation);
+    }
+
+
+    
+    //Update all the animation frames
+    for(auto& e : entityManager.getEntities()){
+
+        if(e->hasComponent<CAnimation>()){
+            e->getComponent<CAnimation>().animation.update();
+        }
+    }
+}
+
+/**
+ * Movement System
+ * 
+ * Moves all DYNAMIC entities
+ * 
+ */
+void ScenePlay::sMovement(){
+
+    float deltaTime = GetFrameTime();
+    float currentTime = GetTime();
+
+    static float lastAttackTime = 0.0f;
+     const float ATTACK_COOLDOWN = 0.2f;
+     static bool canAttack = true;
+    for(auto& e : entityManager.getEntities("DYNAMIC")){
+
+        //TODO: Implement the movement for DYNAMIC entities
+        //1. If the entity is the player, use the input bools to determine direction and x velocity.
+        //2. Ensure that the player cannot move diagonally
+        //3. This is also a good place to update the lifespan component
+        
+
+        auto& transform = e->getComponent<CTransform>();
+        auto& state = e->getComponent<CState>();
+
+        //Adjust previous position of entity
+        transform.prevPosition.x = transform.position.x;
+        transform.prevPosition.y = transform.position.y;
+        
+        float velocity = playerConfig.SPEED;
+
+        // Reset velocity
+        if (e->getID() != "PLAYER") {
+            transform.velocity = { 0.0f, 0.0f };
+        }
+       
+
+
+        //std::cout << player->getComponent<CTransform>().position.x << std::endl;
+       // std::cout << player->getComponent<CTransform>().position.y << std::endl;
+
+        //Enemy Movement
+        if (e->getID() == "ENEMY") {
+
+            //std::string AIType = e->getComponent<CAnimation>().animation.getName();
+            //std::cout << e->getComponent<CFollowPlayer>().home = 
+            
+            if (e->getComponent<CFollowPlayer>().has) {
+                bool canSeePlayer;
+               
+                //Vec2& playerPos = player->getComponent<CTransform>().position;
+                //Vec2& enemyPos = transform.position;         
+
+                Vec2 playerPos = player->getComponent<CTransform>().position;
+                Vec2 enemyPos = e->getComponent<CTransform>().position;
+                Vec2& enemyVel = e->getComponent<CTransform>().velocity;
+
+                e->getComponent<CFollowPlayer>().home = playerPos;
+                canSeePlayer =true;
+
+                //I'm not sure if there's a more efficient way to check if there's a tile inbetween the player and enemy 
+                // Loop through all entities to check for intersections
+                for (auto& tile : entityManager.getEntities("TILE")) {
+                  
+                    
+
+                    // Skip entities that don't block vision but they all do in this case
+                    if (!tile->getComponent<CBoundingBox>().blocksVision) continue;
+
+                    // Check if this entity blocks the line of sight
+                    if (Physics::entityIntersect(enemyPos, playerPos, tile)) {
+                        canSeePlayer = false;
+                        break;  // No need to check further if view is blocked
+                    }
+                }
+
+                if (canSeePlayer){
+
+                    std::cout << "I am here " << std::endl;
+               
+                
+              
+
+               
+                // Calculate desired velocity
+                Vec2 desired = playerPos - enemyPos;
+
+                // Normalize and scale to maximum speed
+                desired.normalize();
+                float speedx = e->getComponent<CFollowPlayer>().speed;      
+                float speedy = e->getComponent<CFollowPlayer>().speed;
+                Vec2 maxSpeed = { speedx, speedy };
+                desired *= maxSpeed;
+
+
+                Vec2 steering = desired - enemyVel; //Calculate steering vector
+
+                //Limit the magnitude of steering force
+                float maxForcexy = 10;
+                Vec2 maxForce{ maxForcexy, maxForcexy };
+                if (steering.length() > maxForcexy) {
+                    steering.normalize();
+                    steering *= maxForce;
+                }
+
+
+                enemyVel += steering;  // Apply steering force to velocity
+
+            }
+
+            }
+            else if (e->getComponent<CPatrol>().has) {
+                //do patrol 
+                auto& patrol = e->getComponent<CPatrol>();
+                auto& transform = e->getComponent<CTransform>();
+
+                Vec2 enemyPos = transform.position;     //Current position of the enemy 
+                Vec2 nextPatrolPoint = patrol.positions[patrol.currentPosition];    //Vec2 to hold the patrol point starts as the initial
+
+                
+                Vec2 toNextPoint = nextPatrolPoint - enemyPos;      //Calculating distance to next control point
+                float distanceToNext = toNextPoint.length();        //Finds length of the vector from the enemy to the next point I think dist could have been used here 
+
+                
+                if (distanceToNext < 5.0f) {  // This can be adjusted but I think this works fine
+                    // Move to the next patrol point
+                    patrol.currentPosition = (patrol.currentPosition + 1) % patrol.positions.size();    //Cycles through the indices without a loop using %
+                    nextPatrolPoint = patrol.positions[patrol.currentPosition];
+                    toNextPoint = nextPatrolPoint - enemyPos;
+                }
+
+                // Calculate desired velocity
+                Vec2 desired = toNextPoint;
+                desired.normalize();
+                float speedx = patrol.speed;    //Did this to get both x and y speeds even though they're the same
+                float speedy = patrol.speed;
+                Vec2 enemySpeed = { speedx,speedy };
+                desired *= enemySpeed;
+
+                
+                transform.velocity = desired;    //set entity velocity to direction vector 
+
+            }
+           
+
+
+        }
+
+        //Player movement
+        if (e->getID() == "PLAYER") {
+
+            auto& input = e->getComponent<CInput>();
+            auto& state = e->getComponent<CState>();
+
+            if (input.up && !input.down) {
+                transform.velocity = { 0.0f, -velocity };
+                transform.facing = { 0, -1 };
+            }
+            else if (input.down && !input.up) {
+                transform.velocity = { 0.0f, velocity };
+                transform.facing = { 0, 1 };
+            }
+            else if (input.left && !input.right) {
+                transform.velocity = { -velocity, 0.0f };
+                transform.facing = { -1, 0 };
+            }
+            else if (input.right && !input.left) {
+                transform.velocity = { velocity, 0.0f };
+                transform.facing = { 1, 0 };
+            }
+
+            // Ensure no diagonal movement
+            if ((input.left || input.right) && (input.up || input.down)) {
+                transform.velocity.y = 0;
+            }
+
+            if ((input.left && input.right) || (input.up && input.down)) {
+                // Continue moving in the last valid direction
+                if (transform.velocity.x == 0) {
+                    transform.velocity.x = (transform.facing.x != 0) ? transform.facing.x * velocity : 0.0f;
+                }
+                if (transform.velocity.y == 0) {
+                    transform.velocity.y = (transform.facing.y != 0) ? transform.facing.y * velocity : 0.0f;
+                }
+            }
+        
+
+            if (!input.attack) {
+                canAttack = true;
+            }
+            //std::cout << transform.facing.x << std::endl;
+
+            if (input.attack && canAttack && (currentTime - lastAttackTime >= ATTACK_COOLDOWN) && state.state != "ATTACK"){
+              
+                gameEngine->playSound("LINKSWING");
+                gameEngine->playSound("LINKYELP");
+                state.state = "ATTACK";
+                canAttack = false;
+                frameCounter = 10;
+                lastAttackTime = currentTime;
+                spawnSword();
+                         
+            }
+            if (state.state == "ATTACK") {
+                if (frameCounter > 0) {
+                    frameCounter--;
+                    transform.velocity = { 0.0, 0.0 };
+                }
+                else {
+                    state.state = "STANDD";
+                }
+
+            }
+
+
+        }
+        //Update position here after velocity has been adjusted
+        transform.position.x += transform.velocity.x;
+        transform.position.y += transform.velocity.y;
+
+
+
+        
+        
+        if (e->hasComponent<CLifespan>()) {
+            auto& lifespan = e->getComponent<CLifespan>();
+            lifespan.remaining--;
+            //std::cout << lifespan.remaining << std::endl;
+            if (lifespan.remaining <= 0) {
+                e->destroy();
+            }
+
+
+        }
+        //I am going to update iframes here too
+        if (e->hasComponent<CInvincibility>()) {
+            auto& invincibility = player->getComponent<CInvincibility>();
+            //std::cout << invincibility.iframes << std::endl;
+            if (invincibility.iframes > 0) {
+                invincibility.iframes--;
+            }
+            else {
+                
+                e->removeComponent<CInvincibility>();
+            }
+        }
+
+    }
+   
+}
+
+/**
+ * Collision System
+ * 
+ * Checks for any collisions between DYNAMIC objects and any other objects
+ * 
+ */
+void ScenePlay::sCollision(){
+    //TODO: Implement the collision logic
+    //Make sure you deal with:
+    //  1. Player-Tile Collisions
+    //  2. Player-Enemy Collisions
+    //  3. Sword-Enemy Collisions
+    //  3. Sword-Player Collisions (if any)
+
+    static bool swordHit;
+    static bool playerHit;
+
+    static float swordCooldownTimer = 0.0f;
+    const float swordCooldownDuration = 0.5f; 
+
+    float currentTime = GetTime();
+
+    for (auto& de : entityManager.getEntities("DYNAMIC")) { //Looping over dynamic entities
+
+
+      
+
+        for (auto& e : entityManager.getEntities()) {
+
+            if (de == e) continue; //skip yourself
+
+            
+            if ((de->getID() == "SWORD" && e->getID() == "PLAYER") ||
+                (de->getID() == "PLAYER" && e->getID() == "SWORD")) {
+
+
+                continue;
+            }
+
+            //Solution code exhibits the sword being able to spawn on tiles but not interact with them so I added this 
+            //Does the same thing as above to skip sword player but skips sword Tile instead 
+            if ((de->getID() == "SWORD" && e->getTag() == "TILE") ||
+                (de->getTag() == "TILE" && e->getID() == "SWORD")) {
+
+
+                continue;
+            }
+
+            
+
+            
+
+
+
+
+            Vec2 currentOverlap = Physics::getOverlap(de, e);
+
+
+            if (currentOverlap.x > 0 && currentOverlap.y > 0) { //collision has occurred 
+
+                Vec2 prevOverlap = Physics::getPreviousOverlap(de, e);
+
+                Vec2 resolution(0, 0);
+
+                std::cout << "I am overlapping" << std::endl;
+
+
+                //Player-enemy collision 
+                if ((de->getID() == "PLAYER" && e->getID() == "ENEMY") ||
+                    (de->getID() == "ENEMY" && e->getID() == "PLAYER")) {
+
+                    auto& player = (de->getID() == "PLAYER") ? de : e;
+
+                    // Determine which entity is the enemy
+                    auto& enemy = (de->getID() == "ENEMY") ? de : e;
+
+                    auto& playerHealth = player->getComponent<CHealth>();
+
+
+                    
+
+
+                    if (!playerHit) {
+                        
+                        gameEngine->playSound("LINKHURT");
+                        player->addComponent<CInvincibility>(30);
+                        int iframes = player->getComponent<CInvincibility>().iframes;
+                        int iframesRem = player->getComponent<CInvincibility>().iframes;
+                        //playerHealth.current -= enemy->getComponent<CDamage>().damage; // Or whatever damage amount you want
+                        
+                        playerHit = true;
+
+
+                        if (playerHealth.current == 0) {
+                            gameEngine->playSound("LINKDIE");
+                            reload = true;
+                        }
+
+
+                       
+                       
+                    }
+                    
+                    if (player->getComponent<CInvincibility>().iframes == 0) {
+                        //std::cout << "Entered " << std::endl;
+                        playerHit = false;
+                    }
+                    
+                   
+                    //continue;
+                }
+
+                // Sword-enemy collision
+                if ((de->getID() == "SWORD" && e->getID() == "ENEMY") ||
+                    (de->getID() == "ENEMY" && e->getID() == "SWORD")) {
+
+                    //Determine which entity is the sword
+                    auto& sword = (de->getID() == "SWORD") ? de : e;
+
+                    // Determine which entity is the enemy
+                    auto& enemy = (de->getID() == "ENEMY") ? de : e;
+
+                    auto& enemyHealth = enemy->getComponent<CHealth>();
+
+
+                   
+
+
+                    if (!swordHit) {
+                        gameEngine->playSound("ENEMYHIT");
+                        enemyHealth.current -= sword->getComponent<CDamage>().damage; // Or whatever damage amount you want
+
+                    if (enemyHealth.current == 0) {
+                        gameEngine->playSound("ENEMYKILL");
+                        enemy->destroy();
+                    }
+
+
+                    frameCounter = 10;      
+                    swordHit = true;
+
+                   
+                    }
+
+                    
+                    if (frameCounter == 0) {
+                        swordHit = false;
+                    }
+
+                   
+                    
+                    continue; // Move to the next entity pair
+                
+                }   //End of sword enemy collision
+               
+                
+                
+
+
+                //Implement damaging enemies link should not move enemies he should be damaged by them 
+                if (prevOverlap.y > 0) {
+                    //de on the left of e 
+                    if (de->getComponent<CTransform>().prevPosition.x < e->getComponent<CTransform>().prevPosition.x) {
+
+
+                       
+                        de->getComponent<CTransform>().velocity.x = 0;
+
+                        de->getComponent<CTransform>().position.x -= currentOverlap.x;
+                        
+                        
+                        
+
+
+
+                    }
+
+                    //de is on the right of e
+                    else {
+                        de->getComponent<CTransform>().velocity.x = 0;
+                        //std::cout << "Collision happening" << std::endl;
+                        de->getComponent<CTransform>().position.x += currentOverlap.x;
+
+                    }
+
+                }
+                else if (prevOverlap.x > 0) {
+                    
+                    //de is above e
+                    if (de->getComponent<CTransform>().prevPosition.y < e->getComponent<CTransform>().prevPosition.y) {
+                        de->getComponent<CTransform>().velocity.y = 0;
+                        de->getComponent<CTransform>().position.y -= currentOverlap.y;
+
+                    }
+                    //de is below e
+                    else {
+                        de->getComponent<CTransform>().velocity.y = 0;
+                        de->getComponent<CTransform>().position.y += currentOverlap.y; 
+                    }
+
+
+                }
+
+
+
+
+
+
+
+
+
+
+            }
+            
+
+
+
+            }
+
+
+
+
+        }
+
+
+
+    
+    
+    
+    }
+
+
+
+
+
+/**
+ * Render System
+ * 
+ * Renders the textures, using the camera system
+ * 
+ */
+void ScenePlay::sRender(){
+    BeginDrawing();
+    BeginMode2D(mainCamera);
+    ClearBackground(Color(252,216,168,255));
+
+    //********** Raylib Drawing Content **********
+        if(renderTextures){
+            renderTex();
+            if(renderHealth)
+                renderHealthBar();
+        }
+        if(renderBoundingBox)
+            renderBB();
+        if(renderGridLines)
+            renderGrid();
+        if(renderVisionDebug){
+            renderAIDebug();
+        }
+
+    EndMode2D();
+        //********** ImGUI Content *********
+        sGUI();
+
+    EndDrawing();
+}
+
+/**
+ * ImGUI System
+ * 
+ * Renders the ImGUI
+ * 
+ */
+void ScenePlay::sGUI(){
+    rlImGuiBegin();
+    ImGui::SetNextWindowSize(ImVec2(400, 350));
+        ImGui::Begin("Zelda 0.5",NULL,ImGuiWindowFlags_NoResize);
+            ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+            if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
+            {
+                if (ImGui::BeginTabItem("Controls"))
+                {
+                    ImGui::SeparatorText("Rendering Controls");
+                    ImGui::Checkbox("Textures",&renderTextures);
+                    ImGui::Checkbox("Health Bar",&renderHealth);
+                    ImGui::Checkbox("Bounding Boxes",&renderBoundingBox);
+                    ImGui::Checkbox("Vision Debug",&renderVisionDebug);
+                    ImGui::Checkbox("Grid",&renderGridLines);
+                    ImGui::SeparatorText("Camera Controls");
+                    ImGui::Checkbox("Follow Camera",&followCam);
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Entities"))
+                {
+                    int count=0;
+                    if (ImGui::TreeNode("By Tag")){
+                        //TODO Add list of all entities by tag
+                        //See your Assignment 2
+                        //Sort the tree nodes by type and add a new tree node when a new entity is detected 
+                        for (const auto& [tag, entityList] : entityManager.getEntityMap()) {
+                            if (ImGui::TreeNode(tag.c_str())) {
+                                for (const auto& entity : entityList) {
+
+
+
+                                    //ImGui::ColorButton("Color", entityColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(20, 20));
+
+                                    ImGui::PushID(entity->getID().c_str());
+                                    
+                                    if (ImGui::Button("D")) {
+                                        if (entity->getID() == "PLAYER") {      //game resets when player is deleted 
+                                            reload=true;
+                                        }
+                                        else
+                                            entity->destroy(); // Call the destroy method for the entity
+                                    }
+                                    
+                                    ImGui::PopID();
+                                    ImGui::SameLine();
+                                    ImGui::Text("%s %s", entity->getTag().c_str(), entity->getID().c_str());
+
+                                    if (entity->hasComponent<CTransform>()) {
+                                        ImGui::SameLine();
+                                        const auto& transform = entity->getComponent<CTransform>();
+                                        ImGui::Text("Pos: (%.2f, %.2f)", transform.position.x, transform.position.y);
+                                    }
+                                   
+                                }
+                                ImGui::TreePop();
+
+
+
+                            }
+
+
+
+                        }
+
+
+                        ImGui::TreePop();       
+                    }
+                    if (ImGui::TreeNode("All Entitites")){
+                        //TODO Add list of all entities
+                        //See your Assignment 2
+                        for (const auto& entity : entityManager.getEntities()) {
+
+
+
+
+                            ImGui::PushID(entity->getID().c_str());
+                           
+                            if (ImGui::Button("D")) {
+                                if (entity->getTag() == "PLAYER") {
+                                    reload=true;
+                                }
+                                else
+                                    entity->destroy(); // Call the destroy method for the entity
+                            }
+                            
+                            ImGui::PopID();
+                            ImGui::SameLine();
+                            ImGui::Text("%s %s", entity->getTag().c_str(), entity->getID().c_str());
+                            ImGui::SameLine();
+                            if (entity->hasComponent<CTransform>()) {
+                                ImGui::SameLine();
+                                const auto& transform = entity->getComponent<CTransform>();
+                                ImGui::Text("Pos: (%.2f, %.2f)", transform.position.x, transform.position.y);
+                            }
+                        }
+
+                        ImGui::TreePop();
+                    }
+                    ImGui::EndTabItem();
+                }
+            }
+            ImGui::EndTabBar();
+        ImGui::End();
+        rlImGuiEnd();
+}
+
+/**
+ * Render entity health bars
+ */
+void ScenePlay::renderHealthBar(){
+    for(auto& e : entityManager.getEntities("DYNAMIC")){
+        if(e->hasComponent<CHealth>()){
+            CHealth health=e->getComponent<CHealth>();
+            Vec2 position=e->getComponent<CTransform>().position;
+            Vec2 size=e->getComponent<CAnimation>().animation.getScaledSize();
+            float yPos=position.y-size.y/2-15;
+            float xPos=position.x-size.x/2;
+            float width=size.x/health.max;
+            float shift=0;
+            Color c = RED;
+            for(int i=0;i<health.max;i++){
+                if(i>=health.current) c=BLACK;
+                DrawRectangle(xPos+shift, yPos+1, width, 6, c);
+                DrawRectangleLines(xPos+shift,yPos,width, 8,BLACK);
+                shift+=width-1;
+            }
+        }
+    }
+}
+
+/**
+ * Render AI Debug information, including vision and patrol paths
+ */
+void ScenePlay::renderAIDebug(){
+    for(auto& e : entityManager.getEntities("DYNAMIC")){
+        if(e->hasComponent<CPatrol>()){
+            auto patrol=e->getComponent<CPatrol>();
+            Vec2 point;
+            Vec2 nextPoint;
+            for(int i=0;i<patrol.positions.size();i++){
+                point=patrol.positions[i];
+                int nextIndex=(i+1)%patrol.positions.size();
+                nextPoint=patrol.positions[nextIndex];
+                DrawLineEx(Vector2(point.x,point.y), Vector2(nextPoint.x,nextPoint.y),2, BLUE);
+                DrawCircle(point.x,point.y,7,BLUE);
+            }
+            
+        }
+        if(e->hasComponent<CFollowPlayer>()){
+            Vec2& home = e->getComponent<CFollowPlayer>().home;
+            auto& position=e->getComponent<CTransform>().position;
+            DrawLineEx(Vector2(position.x,position.y), Vector2(home.x,home.y),2, BLUE);
+
+        }
+    }
+}
+
+/**
+ * Do Action System
+ * 
+ * Updates the player input and game state based on PRESS or RELEASE actions
+ * 
+ * @param action action sent from the gameEngine that contains type and name
+ */
+void ScenePlay::sDoAction(const Action& action){
+
+    //TODO: Add in the results of the additional actions
+    //that you register in the init() function: LEFT, RIGHT, UP, DOWN, and ATTACK
+    //also add in what happens when you RELEASE the button (if anything)
+
+    CInput& input = player->getComponent<CInput>();
+    CState& state = player->getComponent<CState>();
+    if((action.getType()=="PRESS")){
+
+        if(action.getName()=="BB"){
+            renderBoundingBox=!renderBoundingBox;
+        }
+        if(action.getName()=="GRID"){
+            renderGridLines=!renderGridLines;
+        }
+        if(action.getName()=="TEX"){
+            renderTextures=!renderTextures;
+        }
+        if(action.getName()=="HEALTH"){
+            renderHealth=!renderHealth;
+        }
+        if(action.getName()=="VISION"){
+            renderVisionDebug=!renderVisionDebug;
+        }
+        if(action.getName()=="QUIT"){
+            gameEngine->changeScene("MENU",std::make_shared<SceneMenu>(gameEngine));
+        }
+        if(action.getName()=="RELOAD"){
+            reload=true;
+        }
+
+        //Adding player actions
+        if (action.getName() == "LEFT") {
+            std::cout << "I am pressing LEFT" << std::endl;
+            input.left = true;
+        }
+        if (action.getName() == "RIGHT") {
+            std::cout << "I am pressing RIGHT" << std::endl;
+            input.right = true;
+        }
+        if (action.getName() == "UP") {
+
+            std::cout << "I am pressing UP" << std::endl;
+            input.up = true;
+            
+        }
+        if (action.getName() == "DOWN") {
+
+            std::cout << "I am pressing DOWN" << std::endl;
+            input.down = true;
+
+        }
+        if (action.getName() == "ATTACK") {
+            std::cout << "Link is swording" << std::endl;
+            input.attack = true;
+            //frameCounter = 10;  //Edit this value to be the frame counter the sword should appear for 
+        }
+    }
+    if((action.getType()=="RELEASE")){
+        if (action.getName() == "LEFT") {
+            input.left = false;
+        }
+        if (action.getName() == "RIGHT") {
+            input.right = false;
+        }
+        if (action.getName() == "UP") {
+            input.up = false;
+        }
+        if (action.getName() == "DOWN") {
+            input.down = false;
+        }
+        if (action.getName() == "ATTACK") {
+            input.attack = false;
+        }
+
+
+
+    }
+}
+
+/**
+ * Camera System
+ * 
+ * Updates camera
+ * 
+ */
+void ScenePlay::sCamera() {
+    //TODO: Update the camera so that is shows the room that the player is in
+    //Notes:
+    //  1. The camera should be centered on the room (use the grid to help)
+    //  2. when the player leaves the screen, the camera should "jump" to the correct room
+    //  3. Also implement a follow camera that locks to the player
+
+
+    //This initalizes camera for room 0,0 just make it dynamic   
+    //First argument is the offset                                               (-1,0)
+    //Second argument is the target, target should be center of each room (-1,0)  (0,0)  (1,0)
+    //                                                                            (1,0)
+    //mainCamera = Camera2D({ gameEngine->getWidth() / 2,gameEngine->getHeight() / 2 }, { gameEngine->getWidth() / 2,gameEngine->getHeight() / 2 }, 0, 1);
+
+
+    /*
+        if the room is (rx,ry), then the world pixel in the 
+        center of any room is: (rx*w/2, ry*h/2), where w and h are the width and height of the 
+        window in pixels.
+    */
+    int roomX, roomY;
+    int roomHeightInTiles = 12;
+    int roomWidthInTiles = 20;
+
+    Vec2 playerPos = player->getComponent<CTransform>().position;
+
+
+    // Calculate the current room coordinates, using floor to handle negative positions
+
+    int roomWidthInPixels = roomWidthInTiles * gameEngine->getTileSizeX();
+    int roomHeightInPixels = roomHeightInTiles * gameEngine->getTileSizeY();
+
+    //Get the current room the player is in 
+    int currentRoomX = static_cast<int>(std::floor(playerPos.x / roomWidthInPixels));
+    int currentRoomY = static_cast<int>(std::floor(playerPos.y / roomHeightInPixels));
+
+
+    //Get the center of the room that the player is in
+    float roomCenterX = (currentRoomX + 0.5f) * roomWidthInPixels;
+    float roomCenterY = (currentRoomY + 0.5f) * roomHeightInPixels;
+
+
+
+
+    if (followCam) {
+    mainCamera.target.x = playerPos.x+ (gameEngine->getTileSizeX()/2);
+    mainCamera.target.y = playerPos.y + (gameEngine->getTileSizeY()/2);
+    }
+    else {
+        // Center the camera on the current room
+        mainCamera.target.x = roomCenterX;
+        mainCamera.target.y = roomCenterY;
+        
+    
+
+    }
+    
+   
+
+   
+}
+
+/**
+ * Spawns Player
+ * 
+ * Example of spawning a simple player
+ * 
+ */
+void ScenePlay::spawnPlayer(){
+    //TODO: Sample player spawning, you will need to update this once you have some more mechanics finished
+    player=entityManager.addEntity("DYNAMIC", "PLAYER");
+    player->addComponent<CState>("STANDD");
+    player->addComponent<CInput>();
+    player->addComponent<CHealth>(playerConfig.HEALTH,2);
+    player->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("RALLYXPLAYERUP"),true);
+    int playerBX = playerConfig.BX;
+    int playerBY = playerConfig.BY;
+    player->addComponent<CBoundingBox>(Vec2(playerBX,playerBY));
+    Vec2 pos = gridToMidPixel(playerConfig.X,playerConfig.Y,player);
+    player->addComponent<CTransform>(Vec2(pos.x,pos.y), Vec2(0.0f,0.0f), 0.0f);
+}
+
+/**
+ * Spawns a sword at the player's location
+ */
+void ScenePlay::spawnSword() {
+    //TODO: Spawn sword using the players location and facing
+    /*
+     Ensure that it spawns far enough from the player, has a bounding box, is rotated properly, and has a lifespan of 8-10 frames
+
+     copy bullet code from previous project
+
+    */
+    Vec2 playerPos = player->getComponent<CTransform>().position;
+    Vec2 direction = player->getComponent<CTransform>().facing;
+
+    std::shared_ptr<Entity> sword;
+    sword = entityManager.addEntity("DYNAMIC", "SWORD");
+    sword->addComponent<CState>("ATTACKING");   //I don't think the sword needs an animation state but it now has one 
+    //player->getComponent<CState>().state = "ATTACK";
+    sword->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("SWORD"), true);
+    sword->addComponent<CLifespan>(10);
+    sword->addComponent<CTransform>();
+    sword->addComponent<CDamage>();
+    int swordHeight = sword->getComponent<CAnimation>().animation.getScaledSize().x;
+    int swordWidth = sword->getComponent<CAnimation>().animation.getScaledSize().y;
+    //sword->addComponent<CBoundingBox>(Vec2(swordWidth, swordHeight));
+
+    //float swordDistance = 30.0f;
+
+    // Get player size
+    Vec2 playerSize = player->getComponent<CBoundingBox>().size;
+
+    // Calculate the sword's position and rotation
+    Vec2 swordPos;
+    float rotation;
+    float swordDistance = playerSize.x; // Adjus t this value to fine-tune the sword's distance from the player
+
+
+
+    //std::cout << direction.x << std::endl;
+    //std::cout << direction.y << std::endl;
+
+    if (direction.x > 0) { // Facing right
+        std::cout << "Attacking right" << std::endl;
+        swordPos.x = playerPos.x + swordDistance + 8;
+        swordPos.y = playerPos.y;
+        rotation = 90.0f;
+    }
+    else if (direction.x < 0) { // Facing left
+        std::cout << "Attacking Left" << std::endl;
+        swordPos.x = playerPos.x - swordDistance - 8;
+        swordPos.y = playerPos.y;
+        rotation = 270.0f;
+    }
+    else if (direction.y < 0) { // Facing up
+        swordPos.x = playerPos.x;
+        swordPos.y = playerPos.y - swordDistance - 12;
+        rotation = 0.0f;
+
+    }
+    else { // Facing down
+        std::cout << "Attacking Down" << std::endl;
+        swordPos.x = playerPos.x;
+        swordPos.y = playerPos.y + swordDistance + 8;
+        rotation = 180.0f;
+    }
+
+    // Adjust the position so that the bottom middle of the sword is at the calculated position
+    //swordPos.x -= sin(rotation) * swordHeight / 2;
+    //swordPos.y += cos(rotation) * swordHeight / 2;
+
+    if (direction.y < 0 || direction.y>0) { // Facing up or down change bbox generation
+        sword->addComponent<CBoundingBox>(Vec2(swordHeight, swordWidth));
+        sword->addComponent<CTransform>(swordPos, Vec2(0.0f, 0.0f), rotation);
+
+    }
+    else {
+
+
+    sword->addComponent<CBoundingBox>(Vec2(swordWidth, swordHeight));
+    sword->addComponent<CTransform>(swordPos, Vec2(0.0f, 0.0f), rotation);
+}
+
+   // sword->addComponent<CTransform>(Vec2(playerPos.x+(swordDistance*direction.x), playerPos.y+(swordDistance*direction.y)), Vec2(0.0f, 0.0f), 0.0f);
+    
+
+
+    //transform.angle = atan2(direction.y, (direction.x) * 180.0 / PI); // Adjust rotation 
+
+}
+
+/**
+ * Reloads this play scene
+ */
+void ScenePlay::reloadScene(){
+    gameEngine->changeScene("PLAY",std::make_shared<ScenePlay>(gameEngine, levelPath));
+}
+
+/**
+ * Gets the world position from room x,y and tile x,y
+ * @param rx room x
+ * @param ry room y
+ * @param tx tile x
+ * @param ty tile y
+ * return Vec2 with the world position
+ */
+Vec2 ScenePlay::getPosition(int rx, int ry, int tx, int ty){
+    //TODO: compute the world position using the current room and tile
+    const int tileSize = 64;    //could also call getTileSize from gameEngine
+
+    int roomWidthInTiles = 20;
+    int roomHeightInTiles = 12;
+
+    int globalTileX = rx * roomWidthInTiles + tx;
+    int globalTileY = ry * roomHeightInTiles + ty;
+
+    int worldPosX = globalTileX * tileSize ;
+
+    //Place the entities at the bottom left of grid tile 
+
+    //int roomTileY = roomHeightInTiles - ty;
+    
+    //int globalTileYFlipped = ry * roomHeightInTiles + roomTileY;
+    int worldPosY = globalTileY * tileSize;
+     
+    return Vec2(worldPosX, worldPosY);
+}
+
+/**
+ * Updates all systems and entityManager
+ */
+void ScenePlay::update(){
+    entityManager.update();
+
+    sMovement();
+    sAnimation();
+    sCollision();
+    sMusic();
+    sCamera();
+    sRender();
+
+    if(reload==true){
+        reloadScene();
+    }
+    
+}
