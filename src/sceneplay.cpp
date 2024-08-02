@@ -250,6 +250,8 @@ void ScenePlay::sAnimation(){
     std::string newAnimation;       //Copied this from last project just update the string don't make a new animation
     static std::string lastDirection;   //Making this a static variable helped to ensure the player would actually stop in its last animation
         //Clever way to get ensure the last movement player made is where he stops
+    static std::string enemyAnimation;
+
 
     // Determine the direction to move based on priority
     if (input.left && !input.right && !input.up && !input.down) {
@@ -296,6 +298,59 @@ void ScenePlay::sAnimation(){
         animationComponent.animation = gameEngine->getAssets().getAnimation(newAnimation);
     }
 
+
+    //Going to handle enemy animations now need a loop because there's more than 1 
+    // Handle Enemy Animations
+    for (auto& e : entityManager.getEntities("ENEMY")) {
+        if (e->hasComponent<CAnimation>() && e->hasComponent<CState>()) {
+            CState& enemyState = e->getComponent<CState>();
+            CAnimation& enemyAnimation = e->getComponent<CAnimation>();
+            auto& enemyTransform = e->getComponent<CTransform>();
+
+
+            std::string enemyNewAnimation;
+            static std::string enemyLastDirection;
+
+            // Determine the enemy's direction based on their state
+            if (enemyTransform.facing.x == -1) {
+                enemyNewAnimation = "RALLYXENEMYRIGHT"; // Assuming right animation is flipped for left
+                enemyLastDirection = "L";
+            }
+            else if (enemyTransform.facing.x == 1) {
+                enemyNewAnimation = "RALLYXENEMYRIGHT";
+                enemyLastDirection = "R";
+            }
+            else if (enemyTransform.facing.y == -1) {
+                enemyNewAnimation = "RALLYXENEMYUP";
+                enemyLastDirection = "U";
+            }
+            else if (enemyTransform.facing.y == 1) {
+                enemyNewAnimation = "RALLYXENEMYDOWN";
+                enemyLastDirection = "D";
+            }
+            else {
+                // If conflicting directions or no movement, continue with the last valid direction
+                if (enemyLastDirection == "L") {
+                    enemyNewAnimation = "RALLYXENEMYRIGHT";
+                }
+                else if (enemyLastDirection == "R") {
+                    enemyNewAnimation = "RALLYXENEMYRIGHT";
+                }
+                else if (enemyLastDirection == "U") {
+                    enemyNewAnimation = "RALLYXENEMYUP";
+                }
+                else if (enemyLastDirection == "D") {
+                    enemyNewAnimation = "RALLYXENEMYDOWN";
+                }
+            }
+
+            // Update the enemy's animation if it has changed
+            if (!enemyNewAnimation.empty() && enemyAnimation.animation.getName() != enemyNewAnimation) {
+                enemyAnimation.animation = gameEngine->getAssets().getAnimation(enemyNewAnimation);
+            }
+
+        }
+    }
 
     
     //Update all the animation frames

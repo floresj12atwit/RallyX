@@ -63,11 +63,19 @@ Texture RALLYXPLAYERUP ./assets/textures/RallyXPlayer.png
 Texture RALLYXPLAYERRIGHT ./assets/textures/RallyXPlayerRight.png 
 Texture RALLYXPLAYERDOWN ./assets/textures/RallyXPlayerDown.png 
 
+Texture RALLYXENEMYUP ./assets/textures/RallyXEnemyUp.png 
+Texture RALLYXPENEMYRIGHT ./assets/textures/RallyXEnemyRight.png 
+Texture RALLYXENEMYDOWN ./assets/textures/RallyXEnemyDown.png 
+
 
 
 Animation RALLYXPLAYERUP RALLYXPLAYERUP 1 1 4
 Animation RALLYXPLAYERRIGHT RALLYXPLAYERRIGHT 1 1 4
 Animation RALLYXPLAYERDOWN RALLYXPLAYERDOWN 1 1 4
+
+Animation RALLYXENEMYUP RALLYXENEMYUP 1 1 4
+Animation RALLYXENEMYRIGHT RALLYXENEMYRIGHT 1 1 4
+Animation RALLYXENEMYDOWN RALLYXENEMYDOWN 1 1 4
 
 
 Animation DESERTTRACK DESERTTRACK 1 1 4
