@@ -59,6 +59,9 @@ Sound LINKYELP ./assets/sounds/LinkYelp.wav
 
 Texture DESERTTRACK ./assets/textures/Desert_road.png 
 
+Texture WALL1 ./assets/textures/Wall1.png 
+
+
 Texture RALLYXPLAYERUP ./assets/textures/RallyXPlayer.png 
 Texture RALLYXPLAYERRIGHT ./assets/textures/RallyXPlayerRight.png 
 Texture RALLYXPLAYERDOWN ./assets/textures/RallyXPlayerDown.png 
@@ -69,6 +72,8 @@ Texture RALLYXENEMYDOWN ./assets/textures/RallyXEnemyDown.png
 
 
 
+
+
 Animation RALLYXPLAYERUP RALLYXPLAYERUP 1 1 4
 Animation RALLYXPLAYERRIGHT RALLYXPLAYERRIGHT 1 1 4
 Animation RALLYXPLAYERDOWN RALLYXPLAYERDOWN 1 1 4
@@ -76,6 +81,9 @@ Animation RALLYXPLAYERDOWN RALLYXPLAYERDOWN 1 1 4
 Animation RALLYXENEMYUP RALLYXENEMYUP 1 1 4
 Animation RALLYXENEMYRIGHT RALLYXENEMYRIGHT 1 1 4
 Animation RALLYXENEMYDOWN RALLYXENEMYDOWN 1 1 4
+
+
+Animation WALL1 WALL1 1 1 4
 
 
 Animation DESERTTRACK DESERTTRACK 1 1 4
