@@ -72,6 +72,7 @@ void Scene::renderBB(){
  * Draws the textures for each entity in the game. Textures rendered last will be on top.
  */
 void Scene::renderTex(){
+    renderType("DEC");
     renderType("TILE");
     renderType("DYNAMIC");
 }

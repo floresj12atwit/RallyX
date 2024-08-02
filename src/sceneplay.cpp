@@ -192,6 +192,25 @@ void ScenePlay::loadLevel(const std::string& levelPath){
            
 
         }
+        if (str == "DEC") {
+            int RoomX, RoomY, GridX, GridY;
+            file >> type >> RoomX >> RoomY >> GridX >> GridY;
+            
+            auto e = entityManager.addEntity(str, type);
+            e->addComponent<CAnimation>(gameEngine->getAssets().getAnimation(type), true);
+            Vec2 tileWorldPosition = getPosition(RoomX, RoomY, GridX, GridY);
+
+
+            int newGridX = tileWorldPosition.x / gameEngine->getTileSizeX();
+            int newGridY = tileWorldPosition.y / gameEngine->getTileSizeY();
+
+
+            // Get the center pixel position adjusted for the entity size
+            Vec2 pos = gridToMidPixel(newGridX, newGridY, e);
+            e->addComponent<CTransform>(Vec2(pos.x, pos.y), Vec2(0.0f, 0.0f), 0.0f);
+
+
+        }
         
     }
 
@@ -233,24 +252,24 @@ void ScenePlay::sAnimation(){
         //Clever way to get ensure the last movement player made is where he stops
 
     // Determine the direction to move based on priority
-    if (input.left && !input.right) {
+    if (input.left && !input.right && !input.up && !input.down) {
         newAnimation = "RALLYXPLAYERRIGHT";
         lastDirection = "L";
     }
-    else if (input.right && !input.left) {
+    else if (input.right && !input.left && !input.up && !input.down) {
         newAnimation = "RALLYXPLAYERRIGHT";
         lastDirection = "R";
     }
-    else if (input.up && !input.down) {
+    else if (input.up && !input.down && !input.left && !input.right) {
         newAnimation = "RALLYXPLAYERUP";
         lastDirection = "U";
     }
-    else if (input.down && !input.up) {
+    else if (input.down && !input.up && !input.left && !input.right) {
         newAnimation = "RALLYXPLAYERDOWN";
         lastDirection = "D";
     }
     else {
-        // If no direction is pressed, continue in the last direction or set idle
+        // If conflicting inputs are detected or no direction is pressed, continue with the last valid direction
         if (lastDirection == "L") {
             newAnimation = "RALLYXPLAYERRIGHT";
         }
@@ -442,36 +461,37 @@ void ScenePlay::sMovement(){
             auto& input = e->getComponent<CInput>();
             auto& state = e->getComponent<CState>();
 
-            if (input.up && !input.down) {
+            static Vec2 lastVelocity = { 0.0f, 0.0f };  // Remember the last valid velocity
+            static Vec2 lastFacing = { 0, 0 };          // Remember the last facing direction
+
+            if (input.up && !input.down && !input.left && !input.right) {
                 transform.velocity = { 0.0f, -velocity };
                 transform.facing = { 0, -1 };
+                lastVelocity = transform.velocity;
+                lastFacing = transform.facing;
             }
-            else if (input.down && !input.up) {
+            else if (input.down && !input.up && !input.left && !input.right) {
                 transform.velocity = { 0.0f, velocity };
                 transform.facing = { 0, 1 };
+                lastVelocity = transform.velocity;
+                lastFacing = transform.facing;
             }
-            else if (input.left && !input.right) {
+            else if (input.left && !input.right && !input.up && !input.down) {
                 transform.velocity = { -velocity, 0.0f };
                 transform.facing = { -1, 0 };
+                lastVelocity = transform.velocity;
+                lastFacing = transform.facing;
             }
-            else if (input.right && !input.left) {
+            else if (input.right && !input.left && !input.up && !input.down) {
                 transform.velocity = { velocity, 0.0f };
                 transform.facing = { 1, 0 };
+                lastVelocity = transform.velocity;
+                lastFacing = transform.facing;
             }
-
-            // Ensure no diagonal movement
-            if ((input.left || input.right) && (input.up || input.down)) {
-                transform.velocity.y = 0;
-            }
-
-            if ((input.left && input.right) || (input.up && input.down)) {
-                // Continue moving in the last valid direction
-                if (transform.velocity.x == 0) {
-                    transform.velocity.x = (transform.facing.x != 0) ? transform.facing.x * velocity : 0.0f;
-                }
-                if (transform.velocity.y == 0) {
-                    transform.velocity.y = (transform.facing.y != 0) ? transform.facing.y * velocity : 0.0f;
-                }
+            else if ((input.left && input.right) || (input.up && input.down)) {
+                // If both opposite directions are pressed, maintain the last valid direction
+                transform.velocity = lastVelocity;
+                transform.facing = lastFacing;
             }
         
 
@@ -569,6 +589,7 @@ void ScenePlay::sCollision(){
         for (auto& e : entityManager.getEntities()) {
 
             if (de == e) continue; //skip yourself
+            if (e->getTag() == "DEC") continue; //skip decoration
 
             
             if ((de->getID() == "SWORD" && e->getID() == "PLAYER") ||
@@ -587,6 +608,9 @@ void ScenePlay::sCollision(){
                 continue;
             }
 
+
+
+            
             
 
             
