@@ -59,7 +59,15 @@ Sound LINKYELP ./assets/sounds/LinkYelp.wav
 
 Texture DESERTTRACK ./assets/textures/Desert_road.png 
 
+Texture SQUAREWALLSMALL ./assets/textures/SquareWallSmall.png 
+
 Texture WALL1 ./assets/textures/Wall1.png 
+Texture WALL1SIDEWAYS ./assets/textures/Wall1Sideways.png 
+
+Texture WALL2 ./assets/textures/Wall2.png 
+
+Texture GAMEBORDERSIDE ./assets/textures/GameBorderSide.png 
+Texture GAMEBORDERTOPBOTTOM ./assets/textures/GameBorderTopBottom.png 
 
 
 Texture RALLYXPLAYERUP ./assets/textures/RallyXPlayer.png 
@@ -70,6 +78,14 @@ Texture RALLYXENEMYUP ./assets/textures/RallyXEnemyUp.png
 Texture RALLYXPENEMYRIGHT ./assets/textures/RallyXEnemyRight.png 
 Texture RALLYXENEMYDOWN ./assets/textures/RallyXEnemyDown.png 
 
+Texture ROCK1 ./assets/textures/Rock1.png
+Texture ROCK2 ./assets/textures/Rock2.png
+Texture CRASH ./assets/textures/Crash.png
+Texture SMOKE ./assets/textures/Smoke.png
+
+Texture FLAG  ./assets/textures/Flag.png
+Texture SPECIALFLAG  ./assets/textures/SpecialFlag.png
+Texture LUCKYFLAG  ./assets/textures/LuckyFlag.png
 
 
 
@@ -82,8 +98,26 @@ Animation RALLYXENEMYUP RALLYXENEMYUP 1 1 4
 Animation RALLYXENEMYRIGHT RALLYXENEMYRIGHT 1 1 4
 Animation RALLYXENEMYDOWN RALLYXENEMYDOWN 1 1 4
 
+Animation ROCK1 ROCK1 1 1 3
+Animation ROCK2 ROCK2 1 1 4
+Animation CRASH CRASH 1 1 4
+Animation SMOKE SMOKE 1 1 4 
+
+Animation FLAG FLAG 1 1 4
+Animation SPECIALFLAG SPECIALFLAG 1 1 4
+Animation LUCKYFLAG LUCKYFLAG 1 1 4
+
+
+
+
 
 Animation WALL1 WALL1 1 1 4
+Animation WALL1SIDEWAYS WALL1SIDEWAYS 1 1 4
+Animation SQUAREWALLSMALL SQUAREWALLSMALL 1 1 4
+
+Animation WALL2 WALL2 1 1 4
+Animation GAMEBORDERSIDE GAMEBORDERSIDE 1 1 4
+Animation GAMEBORDERTOPBOTTOM GAMEBORDERTOPBOTTOM 1 1 4
 
 
 Animation DESERTTRACK DESERTTRACK 1 1 4

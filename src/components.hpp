@@ -27,7 +27,7 @@ class CTransform : public Component{
         Vec2 prevPosition;    /* Previous frame position (x,y) of the entity */
         Vec2 velocity;        /* Current velocity (vx,vy) of the entity */
         Vec2 scale;           /* Current scale (sx,xy) of the entity */
-        Vec2 facing = {0,1};  /* Current (x,y) facing, either 1 or -1 for x and y */  
+        Vec2 facing = {0,-1};  /* Current (x,y) facing, either 1 or -1 for x and y */  
         float angle;          /* Current rotation angle of the object (deg) */
 
         CTransform();

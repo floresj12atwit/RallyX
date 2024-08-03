@@ -103,6 +103,22 @@ void ScenePlay::loadLevel(const std::string& levelPath){
             e->addComponent<CTransform>(Vec2(pos.x, pos.y), Vec2(0.0f, 0.0f), 0.0f);
             e->getComponent<CTransform>().prevPosition.x = pos.x;
             e->getComponent<CTransform>().prevPosition.y = pos.y;
+
+            if (type == "FLAG" || type == "SPECIALFLAG" || type=="LUCKYFLAG") {
+                e->getComponent<CBoundingBox>().blocksVision = false;
+                e->addComponent<CBoundingBox>(Vec2(bboxSizeX/2, bboxSizeY/2));
+
+
+            }
+
+            if (type == "ROCK1" || type == "ROCK2") {
+                bboxSizeY = bboxSizeY - 30;
+                e->getComponent<CBoundingBox>().blocksVision = true;
+                e->addComponent<CBoundingBox>(Vec2(bboxSizeX, bboxSizeY));
+
+
+            }
+
         }
         if (str == "PLAYER") {
             file >> playerConfig.X >> playerConfig.Y >> playerConfig.BX >> playerConfig.BY >> playerConfig.SPEED >> playerConfig.HEALTH >> playerConfig.WEAPON;
@@ -253,6 +269,12 @@ void ScenePlay::sAnimation(){
     static std::string enemyAnimation;
 
 
+    if (player->getComponent<CLifespan>().remaining==fullTank) {
+        lastDirection = "U";
+        lastAnimation = "RALLYXPLAYERUP";
+        newAnimation = "RALLYXPLAYERUP";
+    }
+    
     // Determine the direction to move based on priority
     if (input.left && !input.right && !input.up && !input.down) {
         newAnimation = "RALLYXPLAYERRIGHT";
@@ -283,6 +305,11 @@ void ScenePlay::sAnimation(){
         }
         else if (lastDirection == "D") {
             newAnimation = "RALLYXPLAYERDOWN";
+        }
+        else {
+            // Default direction when no input and no last direction
+            newAnimation = "RALLYXPLAYERUP"; // Default to facing up
+            lastDirection = "U";
         }
     }
 
@@ -590,8 +617,14 @@ void ScenePlay::sMovement(){
         if (e->hasComponent<CLifespan>()) {
             auto& lifespan = e->getComponent<CLifespan>();
             lifespan.remaining--;
-            //std::cout << lifespan.remaining << std::endl;
-            if (lifespan.remaining <= 0) {
+            //std::cout << e->getID() << std::endl;
+            if (e->getID() == "BANG" && lifespan.remaining <= 0) {
+                e->destroy();
+                reload = true;
+
+            }
+
+            else if (lifespan.remaining <= 0) {
                 e->destroy();
             }
 
@@ -636,6 +669,10 @@ void ScenePlay::sCollision(){
 
     float currentTime = GetTime();
 
+    
+
+
+
     for (auto& de : entityManager.getEntities("DYNAMIC")) { //Looping over dynamic entities
 
 
@@ -663,6 +700,13 @@ void ScenePlay::sCollision(){
                 continue;
             }
 
+            if ((de->getID() == "BANG" && e->getID() == "PLAYER") ||
+                (de->getID() == "PLAYER" && e->getID() == "BANG")) {
+
+
+                continue;
+            }
+
 
 
             
@@ -683,6 +727,48 @@ void ScenePlay::sCollision(){
                 Vec2 resolution(0, 0);
 
                 std::cout << "I am overlapping" << std::endl;
+
+
+                //Player-flag collision
+                if ((de->getID() == "PLAYER" &&
+                    (e->getID() == "FLAG" || e->getID() == "LUCKYFLAG" || e->getID() == "SPECIALFLAG")) ||
+                    ((de->getID() == "FLAG" || de->getID() == "LUCKYFLAG" || de->getID() == "SPECIALFLAG") &&
+                        e->getID() == "PLAYER")) {
+
+                    auto& player = (de->getID() == "PLAYER") ? de : e;
+
+                    auto& flag = (de->getID() == "FLAG" || de->getID() == "LUCKYFLAG" || de->getID() == "SPECIALFLAG") ? de : e;
+
+                    flag->destroy();        //Flags dissapear just need to implement score collection now 
+
+                    continue;
+
+                }
+
+
+               //Player-rock collision
+                if ((de->getID() == "PLAYER" &&
+                    (e->getID() == "ROCK1" || e->getID() == "ROCK2")) ||
+                    ((de->getID() == "ROCK1" || de->getID() == "ROCK2") &&
+                        e->getID() == "PLAYER")) {
+
+                    auto& player = (de->getID() == "PLAYER") ? de : e;
+                    auto& rock = (de->getID() == "ROCK1" || de->getID() == "ROCK2") ? de : e;
+
+
+                    //spawn bang
+                    spawnBang();
+                    
+                    //animationComponent.animation = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP");
+                    player->destroy();
+                    
+                    
+                 
+
+                    continue ;
+                }
+
+
 
 
                 //Player-enemy collision 
@@ -1204,6 +1290,65 @@ void ScenePlay::sCamera() {
 
    
 }
+/*
+
+
+Using spawn coin from PA3 as reference
+void ScenePlay::spawnCoin(const std::shared_ptr<Entity>& entity){
+    //TODO: Spawn coin directly above the entity that triggered this function call (entity)
+    Vec2 QTilePos = entity->getComponent<CTransform>().position;
+
+
+
+    std::shared_ptr<Entity> coin;
+    coin = entityManager.addEntity("DYNAMIC", "COIN");
+
+    coin->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("COIN"), true);
+    float tileSizeY = gameEngine->getTileSizeY();
+
+
+    coin->addComponent<CLifespan>(50);
+
+
+    //coin->addComponent<CBoundingBox>(Vec2(scaledX, scaledY));
+    //Vec2 pos = gridToMidPixel(playerConfig.GX, playerConfig.GY, coin);
+    coin->addComponent<CTransform>(Vec2(QTilePos.x, QTilePos.y-tileSizeY), Vec2(0.0f, 0.0f), 0.0f);
+
+}
+*/
+
+
+
+
+void ScenePlay::spawnBang() {
+
+    Vec2 playerPos = player->getComponent<CTransform>().position;
+
+    std::shared_ptr<Entity> bang;
+    bang = entityManager.addEntity("DYNAMIC", "BANG");  //This is dynamic because it's life span is the way I linger on the dead screen and then restart
+    bang->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("CRASH"), true);
+
+    bang->addComponent<CLifespan>(30);
+    bang->addComponent<CTransform>(Vec2(playerPos.x, playerPos.y), Vec2(0.0f, 0.0f), 0.0f);
+
+
+}
+
+
+//Take user to game over screen 
+void GameOver() {
+
+
+
+}
+
+//Randomly spawn flags on game start ensure that tile they are placed on is not already occupied
+void spawnFlags() {
+
+
+
+}
+
 
 /**
  * Spawns Player
@@ -1214,7 +1359,7 @@ void ScenePlay::sCamera() {
 void ScenePlay::spawnPlayer(){
     //TODO: Sample player spawning, you will need to update this once you have some more mechanics finished
     player=entityManager.addEntity("DYNAMIC", "PLAYER");
-    player->addComponent<CState>("STANDD");
+    //player->addComponent<CState>("STANDD");
     player->addComponent<CInput>();
     player->addComponent<CHealth>(playerConfig.HEALTH,2);
     player->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("RALLYXPLAYERUP"),true);
@@ -1223,6 +1368,10 @@ void ScenePlay::spawnPlayer(){
     player->addComponent<CBoundingBox>(Vec2(playerBX,playerBY));
     Vec2 pos = gridToMidPixel(playerConfig.X,playerConfig.Y,player);
     player->addComponent<CTransform>(Vec2(pos.x,pos.y), Vec2(0.0f,0.0f), 0.0f);
+    player->addComponent<CLifespan>(fullTank+2);    //Weird hang I found to get the player to look up on respawn 
+    
+   
+
 }
 
 /**
@@ -1356,6 +1505,9 @@ Vec2 ScenePlay::getPosition(int rx, int ry, int tx, int ty){
  * Updates all systems and entityManager
  */
 void ScenePlay::update(){
+
+
+
     entityManager.update();
 
     sMovement();

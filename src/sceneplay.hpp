@@ -28,8 +28,11 @@ class ScenePlay : public Scene{
         std::shared_ptr<Entity> player; /* Shared pointer reference to the player entity */
         bool reload=false;              /* If the Scene should be reloaded at the end of the current frame */
         bool renderHealth=true;         /* If the entity health should be rendered */
-        bool followCam=false;           /* If the locked follow camera should be active, false=room cam */
+        bool followCam=true;           /* If the locked follow camera should be active, false=room cam */
         Vec2 room = {0,0};              /* Current (x,y) room. (0,0) is the starting room */
+
+        int fullTank=3000;//This is going to be used in conjunction with the lifespan to represent the fuel the player has left 
+
 
         void init(const std::string& levelPath);
         void sAnimation();
@@ -41,6 +44,11 @@ class ScenePlay : public Scene{
         void sCamera();
         void spawnPlayer();
         void spawnSword();
+        void spawnBang();
+
+
+
+
         void loadLevel(const std::string& levelPath);
         void reloadScene();
         Vec2 getPosition(int rx, int ry, int tx, int ty);
