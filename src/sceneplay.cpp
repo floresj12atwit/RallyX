@@ -389,6 +389,7 @@ void ScenePlay::sAnimation(){
                 enemyNewAnimation = "ENEMYCARSPIN";
             }
 
+            
             if (enemyTransform.velocity.x != 0 || enemyTransform.velocity.y != 0) {
                 // The enemy is moving, so set the state to "CHASING"
                 e->getComponent<CState>().state = "CHASING";
@@ -749,6 +750,14 @@ void ScenePlay::sCollision(){
 
                 continue;
             }
+
+            if ((de->getID() == "SMOKE" && e->getID() == "SMOKE") ||
+                (de->getID() == "SMOKE" && e->getID() == "SMOKE")) {
+
+
+                continue;
+            }
+
 
 
 
