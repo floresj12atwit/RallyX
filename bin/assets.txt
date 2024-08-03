@@ -75,8 +75,10 @@ Texture RALLYXPLAYERRIGHT ./assets/textures/RallyXPlayerRight.png
 Texture RALLYXPLAYERDOWN ./assets/textures/RallyXPlayerDown.png 
 
 Texture RALLYXENEMYUP ./assets/textures/RallyXEnemyUp.png 
-Texture RALLYXPENEMYRIGHT ./assets/textures/RallyXEnemyRight.png 
+Texture RALLYXENEMYRIGHT ./assets/textures/RallyXEnemyRight.png 
 Texture RALLYXENEMYDOWN ./assets/textures/RallyXEnemyDown.png 
+Texture ENEMYCARSPIN ./assets/textures/EnemyCarSpin.png 
+
 
 Texture ROCK1 ./assets/textures/Rock1.png
 Texture ROCK2 ./assets/textures/Rock2.png
@@ -97,11 +99,13 @@ Animation RALLYXPLAYERDOWN RALLYXPLAYERDOWN 1 1 4
 Animation RALLYXENEMYUP RALLYXENEMYUP 1 1 4
 Animation RALLYXENEMYRIGHT RALLYXENEMYRIGHT 1 1 4
 Animation RALLYXENEMYDOWN RALLYXENEMYDOWN 1 1 4
+Animation ENEMYCARSPIN ENEMYCARSPIN 12 3 4
+
 
 Animation ROCK1 ROCK1 1 1 3
 Animation ROCK2 ROCK2 1 1 4
 Animation CRASH CRASH 1 1 4
-Animation SMOKE SMOKE 1 1 4 
+Animation SMOKE SMOKE 1 1 3
 
 Animation FLAG FLAG 1 1 4
 Animation SPECIALFLAG SPECIALFLAG 1 1 4

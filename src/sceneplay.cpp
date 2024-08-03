@@ -46,7 +46,7 @@ void ScenePlay::init(const std::string& levelPath){
     registerAction(KEY_A, "LEFT");
     registerAction(KEY_S, "DOWN");
     registerAction(KEY_D, "RIGHT"); 
-    registerAction(KEY_SPACE, "ATTACK");
+    registerAction(KEY_SPACE, "SMOKE");
 
 
     
@@ -134,7 +134,7 @@ void ScenePlay::loadLevel(const std::string& levelPath){
 
 
                 auto e = entityManager.addEntity("DYNAMIC", str);
-                std::cout << enemyName << std::endl;
+                //std::cout << enemyName << std::endl;
                 e->addComponent<CAnimation>(gameEngine->getAssets().getAnimation(enemyName), true);
                 float scaledX = gameEngine->getAssets().getAnimation(enemyName).getScaledSize().x;
                 float scaledY = gameEngine->getAssets().getAnimation(enemyName).getScaledSize().y;
@@ -168,7 +168,7 @@ void ScenePlay::loadLevel(const std::string& levelPath){
                 e->addComponent<CDamage>();
                 //e->addComponent<CInvincibility>();
                 
-                e->addComponent<CState>();
+                e->addComponent<CState>("CHASING");
 
               
                 
@@ -316,9 +316,9 @@ void ScenePlay::sAnimation(){
 
  
     
-    //std::cout << frameCounter << std::endl;
+    
    
-
+    
     if (!newAnimation.empty() && animationComponent.animation.getName() != newAnimation) {
         
         
@@ -328,17 +328,31 @@ void ScenePlay::sAnimation(){
 
     //Going to handle enemy animations now need a loop because there's more than 1 
     // Handle Enemy Animations
-    for (auto& e : entityManager.getEntities("ENEMY")) {
-        if (e->hasComponent<CAnimation>() && e->hasComponent<CState>()) {
+    for (auto& e : entityManager.getEntities("DYNAMIC")) {
+        if (e->getID() == "ENEMY") {
             CState& enemyState = e->getComponent<CState>();
             CAnimation& enemyAnimation = e->getComponent<CAnimation>();
             auto& enemyTransform = e->getComponent<CTransform>();
 
 
-            std::string enemyNewAnimation;
-            static std::string enemyLastDirection;
+            //std::cout << "I am here lol" << std::endl;
 
+            std::string enemyNewAnimation;
+            
+
+            //std::cout << enemyAnimation.animation.getName() << std::endl;
+            static std::string enemyLastDirection;
+            
             // Determine the enemy's direction based on their state
+
+            
+            
+            
+            
+            
+            
+            
+
             if (enemyTransform.facing.x == -1) {
                 enemyNewAnimation = "RALLYXENEMYRIGHT"; // Assuming right animation is flipped for left
                 enemyLastDirection = "L";
@@ -371,6 +385,19 @@ void ScenePlay::sAnimation(){
                 }
             }
 
+            if (enemyState.state == "InSmoke") {
+                enemyNewAnimation = "ENEMYCARSPIN";
+            }
+
+            if (enemyTransform.velocity.x != 0 || enemyTransform.velocity.y != 0) {
+                // The enemy is moving, so set the state to "CHASING"
+                e->getComponent<CState>().state = "CHASING";
+            }
+
+            
+          
+
+            
             // Update the enemy's animation if it has changed
             if (!enemyNewAnimation.empty() && enemyAnimation.animation.getName() != enemyNewAnimation) {
                 enemyAnimation.animation = gameEngine->getAssets().getAnimation(enemyNewAnimation);
@@ -401,7 +428,7 @@ void ScenePlay::sMovement(){
     float currentTime = GetTime();
 
     static float lastAttackTime = 0.0f;
-     const float ATTACK_COOLDOWN = 0.2f;
+     const float ATTACK_COOLDOWN = 0.1f;
      static bool canAttack = true;
     for(auto& e : entityManager.getEntities("DYNAMIC")){
 
@@ -421,9 +448,12 @@ void ScenePlay::sMovement(){
         float velocity = playerConfig.SPEED;
 
         // Reset velocity
+        /*
         if (e->getID() != "PLAYER") {
             transform.velocity = { 0.0f, 0.0f };
         }
+        */
+        
        
 
 
@@ -445,59 +475,36 @@ void ScenePlay::sMovement(){
                 Vec2 playerPos = player->getComponent<CTransform>().position;
                 Vec2 enemyPos = e->getComponent<CTransform>().position;
                 Vec2& enemyVel = e->getComponent<CTransform>().velocity;
+                
+               
 
-                e->getComponent<CFollowPlayer>().home = playerPos;
-                canSeePlayer =true;
 
-                //I'm not sure if there's a more efficient way to check if there's a tile inbetween the player and enemy 
-                // Loop through all entities to check for intersections
-                for (auto& tile : entityManager.getEntities("TILE")) {
-                  
-                    
+                // Calculate the direction vector towards the player
+                Vec2 direction = playerPos - enemyPos;
 
-                    // Skip entities that don't block vision but they all do in this case
-                    if (!tile->getComponent<CBoundingBox>().blocksVision) continue;
-
-                    // Check if this entity blocks the line of sight
-                    if (Physics::entityIntersect(enemyPos, playerPos, tile)) {
-                        canSeePlayer = false;
-                        break;  // No need to check further if view is blocked
+                // Check if enemy is aligned with the direction towards the player
+                if (std::abs(direction.x) > std::abs(direction.y)) {
+                    // Move horizontally
+                    if (direction.x > 0) {
+                        enemyVel = { e->getComponent<CFollowPlayer>().speed, 0.0f };
+                        e->getComponent<CTransform>().facing = { 1, 0 }; // Facing right
+                    }
+                    else {
+                        enemyVel = { -e->getComponent<CFollowPlayer>().speed, 0.0f };
+                        e->getComponent<CTransform>().facing = { -1, 0 }; // Facing left
                     }
                 }
-
-                if (canSeePlayer){
-
-                    std::cout << "I am here " << std::endl;
-               
-                
-              
-
-               
-                // Calculate desired velocity
-                Vec2 desired = playerPos - enemyPos;
-
-                // Normalize and scale to maximum speed
-                desired.normalize();
-                float speedx = e->getComponent<CFollowPlayer>().speed;      
-                float speedy = e->getComponent<CFollowPlayer>().speed;
-                Vec2 maxSpeed = { speedx, speedy };
-                desired *= maxSpeed;
-
-
-                Vec2 steering = desired - enemyVel; //Calculate steering vector
-
-                //Limit the magnitude of steering force
-                float maxForcexy = 10;
-                Vec2 maxForce{ maxForcexy, maxForcexy };
-                if (steering.length() > maxForcexy) {
-                    steering.normalize();
-                    steering *= maxForce;
+                else {
+                    // Move vertically
+                    if (direction.y > 0) {
+                        enemyVel = { 0.0f, e->getComponent<CFollowPlayer>().speed };
+                        e->getComponent<CTransform>().facing = { 0, 1 }; // Facing down
+                    }
+                    else {
+                        enemyVel = { 0.0f, -e->getComponent<CFollowPlayer>().speed };
+                        e->getComponent<CTransform>().facing = { 0, -1 }; // Facing up
+                    }
                 }
-
-
-                enemyVel += steering;  // Apply steering force to velocity
-
-            }
 
             }
             else if (e->getComponent<CPatrol>().has) {
@@ -545,7 +552,8 @@ void ScenePlay::sMovement(){
 
             static Vec2 lastVelocity = { 0.0f, 0.0f };  // Remember the last valid velocity
             static Vec2 lastFacing = { 0, 0 };          // Remember the last facing direction
-
+            
+            
             if (input.up && !input.down && !input.left && !input.right) {
                 transform.velocity = { 0.0f, -velocity };
                 transform.facing = { 0, -1 };
@@ -579,6 +587,26 @@ void ScenePlay::sMovement(){
 
             if (!input.attack) {
                 canAttack = true;
+                frameCounter = 10;
+            }
+
+
+            if (input.attack && canAttack && (currentTime - lastAttackTime >= ATTACK_COOLDOWN) && frameCounter > 0) {
+                spawnSmoke();
+                frameCounter--;  // Decrement smokeFrames each time smoke is spawned
+
+                if (frameCounter <= 0) {
+                    canAttack = false; // Stop attacking once smokeFrames is exhausted
+                }
+
+                lastAttackTime = currentTime;
+            }
+
+
+
+            /*
+            if (!input.attack) {
+                canAttack = true;
             }
             //std::cout << transform.facing.x << std::endl;
 
@@ -590,9 +618,13 @@ void ScenePlay::sMovement(){
                 canAttack = false;
                 frameCounter = 10;
                 lastAttackTime = currentTime;
-                spawnSword();
+                //spawnSword();
+                spawnSmoke();
                          
             }
+            */
+
+            /*
             if (state.state == "ATTACK") {
                 if (frameCounter > 0) {
                     frameCounter--;
@@ -603,6 +635,7 @@ void ScenePlay::sMovement(){
                 }
 
             }
+            */
 
 
         }
@@ -667,10 +700,12 @@ void ScenePlay::sCollision(){
     static float swordCooldownTimer = 0.0f;
     const float swordCooldownDuration = 0.5f; 
 
+    
+
     float currentTime = GetTime();
 
     
-
+  
 
 
     for (auto& de : entityManager.getEntities("DYNAMIC")) { //Looping over dynamic entities
@@ -702,6 +737,14 @@ void ScenePlay::sCollision(){
 
             if ((de->getID() == "BANG" && e->getID() == "PLAYER") ||
                 (de->getID() == "PLAYER" && e->getID() == "BANG")) {
+
+
+                continue;
+            }
+
+
+            if ((de->getID() == "SMOKE" && e->getID() == "PLAYER") ||
+                (de->getID() == "PLAYER" && e->getID() == "SMOKE")) {
 
 
                 continue;
@@ -770,7 +813,30 @@ void ScenePlay::sCollision(){
 
 
 
+                //Enemy smokeScreen collision
+                
+                if ((de->getID() == "ENEMY" && e->getID() == "SMOKE") ||
+                    (de->getID() == "SMOKE" && e->getID() == "ENEMY")) {
 
+                    auto& enemy = (de->getID() == "ENEMY") ? de : e;
+                    auto& smoke = (de->getID() == "SMOKE") ? de : e;
+                    std::cout << "Enemy hitting smoke" << std::endl;
+
+                    //enemy->getComponent<CTransform>().velocity = { 0,0 };
+
+
+                    //Set state to "InSmoke"
+                    enemy->getComponent<CState>().state = "InSmoke";
+
+                    
+
+                    
+                }
+               
+                
+
+
+               
                 //Player-enemy collision 
                 if ((de->getID() == "PLAYER" && e->getID() == "ENEMY") ||
                     (de->getID() == "ENEMY" && e->getID() == "PLAYER")) {
@@ -788,12 +854,16 @@ void ScenePlay::sCollision(){
 
                     if (!playerHit) {
                         
-                        gameEngine->playSound("LINKHURT");
-                        player->addComponent<CInvincibility>(30);
-                        int iframes = player->getComponent<CInvincibility>().iframes;
-                        int iframesRem = player->getComponent<CInvincibility>().iframes;
+                        gameEngine->playSound("LINKHURT");  //play explosion sound
+                        //player->addComponent<CInvincibility>(30);
+                        //int iframes = player->getComponent<CInvincibility>().iframes;
+                        //int iframesRem = player->getComponent<CInvincibility>().iframes;
                         //playerHealth.current -= enemy->getComponent<CDamage>().damage; // Or whatever damage amount you want
                         
+                        spawnBang();
+                        player->destroy();
+                        enemy->destroy();
+
                         playerHit = true;
 
 
@@ -863,7 +933,7 @@ void ScenePlay::sCollision(){
                 
 
 
-                //Implement damaging enemies link should not move enemies he should be damaged by them 
+                
                 if (prevOverlap.y > 0) {
                     //de on the left of e 
                     if (de->getComponent<CTransform>().prevPosition.x < e->getComponent<CTransform>().prevPosition.x) {
@@ -1195,9 +1265,9 @@ void ScenePlay::sDoAction(const Action& action){
             input.down = true;
 
         }
-        if (action.getName() == "ATTACK") {
-            std::cout << "Link is swording" << std::endl;
-            input.attack = true;
+        if (action.getName() == "SMOKE") {
+            std::cout << "Spawning smoke" << std::endl;
+            input.attack = true;    //I will keep it as attack as that is technically the "attack" in this game 
             //frameCounter = 10;  //Edit this value to be the frame counter the sword should appear for 
         }
     }
@@ -1214,7 +1284,7 @@ void ScenePlay::sDoAction(const Action& action){
         if (action.getName() == "DOWN") {
             input.down = false;
         }
-        if (action.getName() == "ATTACK") {
+        if (action.getName() == "SMOKE") {
             input.attack = false;
         }
 
@@ -1328,7 +1398,7 @@ void ScenePlay::spawnBang() {
     bang = entityManager.addEntity("DYNAMIC", "BANG");  //This is dynamic because it's life span is the way I linger on the dead screen and then restart
     bang->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("CRASH"), true);
 
-    bang->addComponent<CLifespan>(30);
+    bang->addComponent<CLifespan>(50);
     bang->addComponent<CTransform>(Vec2(playerPos.x, playerPos.y), Vec2(0.0f, 0.0f), 0.0f);
 
 
@@ -1373,6 +1443,56 @@ void ScenePlay::spawnPlayer(){
    
 
 }
+
+//Similar to spawn sword but spawning a smoke behind the player
+void ScenePlay::spawnSmoke() {
+
+    Vec2 playerPos = player->getComponent<CTransform>().position;
+    Vec2 direction = player->getComponent<CTransform>().facing;  //we may need facing to ensure it spawned at the back of the player 
+
+    std::shared_ptr<Entity> smoke;
+    smoke = entityManager.addEntity("DYNAMIC", "SMOKE");
+    smoke->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("SMOKE"), true);
+    smoke->addComponent<CLifespan>(40); // Adjust the lifespan as needed
+    smoke->addComponent<CTransform>();
+
+    // Get player size
+    Vec2 playerSize = player->getComponent<CBoundingBox>().size;
+
+
+
+    // Calculate the smoke's position
+    Vec2 smokePos;
+
+    if (direction.x > 0) { // Facing right
+        smokePos.x = playerPos.x - playerSize.x; // Spawn smoke to the left of the player
+        smokePos.y = playerPos.y;
+    }
+    else if (direction.x < 0) { // Facing left
+        smokePos.x = playerPos.x + playerSize.x; // Spawn smoke to the right of the player
+        smokePos.y = playerPos.y;
+    }
+    else if (direction.y < 0) { // Facing up
+        smokePos.x = playerPos.x;
+        smokePos.y = playerPos.y + playerSize.y; // Spawn smoke below the player
+    }
+    else { // Facing down
+        smokePos.x = playerPos.x;
+        smokePos.y = playerPos.y - playerSize.y; // Spawn smoke above the player
+    }
+
+    // Add a transform component to the smoke entity with the calculated position
+    smoke->addComponent<CTransform>(smokePos, Vec2(0.0f, 0.0f), 0.0f); // No rotation required
+   
+    float tileSizeX = gameEngine->getTileSizeX();
+    float tileSizeY = gameEngine->getTileSizeY();
+    float bboxSizeX = tileSizeX;
+    float bboxSizeY = tileSizeY;
+    
+    smoke->addComponent<CBoundingBox>(Vec2(bboxSizeX, bboxSizeY));
+
+}
+
 
 /**
  * Spawns a sword at the player's location

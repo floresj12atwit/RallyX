@@ -34,6 +34,7 @@ class ScenePlay : public Scene{
         int fullTank=3000;//This is going to be used in conjunction with the lifespan to represent the fuel the player has left 
 
 
+
         void init(const std::string& levelPath);
         void sAnimation();
         void sMovement();
@@ -45,6 +46,7 @@ class ScenePlay : public Scene{
         void spawnPlayer();
         void spawnSword();
         void spawnBang();
+        void spawnSmoke();
 
 
 
