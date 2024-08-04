@@ -432,7 +432,7 @@ void ScenePlay::sMovement(){
      const float ATTACK_COOLDOWN = 0.15f;
      static bool canAttack = true;
 
-     bool smokeSoundPlaying = false;
+    
 
     for(auto& e : entityManager.getEntities("DYNAMIC")){
 
@@ -479,7 +479,7 @@ void ScenePlay::sMovement(){
                 Vec2 playerPos = player->getComponent<CTransform>().position;
                 Vec2 enemyPos = e->getComponent<CTransform>().position;
                 Vec2& enemyVel = e->getComponent<CTransform>().velocity;
-                
+                e->getComponent<CFollowPlayer>().home = playerPos;
                
 
 
@@ -598,10 +598,9 @@ void ScenePlay::sMovement(){
             if (input.attack && canAttack && (currentTime - lastAttackTime >= ATTACK_COOLDOWN) && frameCounter > 0) {
                 spawnSmoke();
 
-                if (!smokeSoundPlaying) {
-                    gameEngine->playSound("SMOKESOUND");
-                    smokeSoundPlaying = true; // Mark sound as playing
-                }
+               
+                gameEngine->playSound("SMOKESOUND");
+                
 
                 frameCounter--;  // Decrement smokeFrames each time smoke is spawned
 
@@ -882,7 +881,7 @@ void ScenePlay::sCollision(){
 
                     
 
-
+                    /*
                     if (!playerHit) {
                         
                         gameEngine->playSound("CARCRASH");  //play car crash sound
@@ -899,11 +898,12 @@ void ScenePlay::sCollision(){
                             //gameEngine->playSound("LINKDIE");
                             reload = true;
                         }
-
+                        
 
                        
                        
                     }
+                    */
                     
                     if (player->getComponent<CInvincibility>().iframes == 0) {
                         //std::cout << "Entered " << std::endl;

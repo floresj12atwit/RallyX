@@ -11,7 +11,9 @@ SceneMenu::SceneMenu(GameEngine* gameEngine) : Scene(gameEngine){
  * Initializes actions and sets strings for level paths and menu items
  */
 void SceneMenu::init(){
-    title="ZELDA 0.5";
+    title="RALLY X";
+    nameText = "By Joshua Flores";
+
     menuStrings.push_back("Level 1");
     menuStrings.push_back("Level 2");
     menuStrings.push_back("Level 3");
@@ -27,7 +29,7 @@ void SceneMenu::init(){
     registerAction(KEY_SPACE, "PLAY");
     registerAction(KEY_ESCAPE, "QUIT");
 
-    gameEngine->playMusic("BGMUSIC");
+    gameEngine->playMusic("MENUMUSIC");
 }
 
 /**
@@ -37,6 +39,11 @@ void SceneMenu::sRender(){
     BeginDrawing();
 
         ClearBackground(Color(252,216,168,255));
+
+        // Update positions
+        if (titlePosX < 50) titlePosX += moveSpeed; // Move towards the desired position
+        if (namePosX > 100) namePosX -= moveSpeed;   // Move towards the desired position
+
 
         //********** Raylib Drawing Content **********
         const Font& font = gameEngine->getAssets().getFont("orbitron");
@@ -48,7 +55,11 @@ void SceneMenu::sRender(){
             DrawTextEx(font, menuStrings[i].c_str(), Vector2(50,75*(i+2)), 48, 1, textColor);
         }
         DrawTextEx(font, menuText.c_str(), Vector2(50,730), 32, 1, BLACK);
-        DrawTextEx(font, title.c_str(), Vector2(50,50), 64, 1, BLACK);
+
+
+        // Draw the moving texts
+        DrawTextEx(font, title.c_str(), Vector2(titlePosX, 50), 64, 1, BLACK);
+        DrawTextEx(font, nameText.c_str(), Vector2(namePosX, 100), 64, 1, BLACK);
 
     EndDrawing();
 }

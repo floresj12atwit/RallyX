@@ -57,9 +57,13 @@ Sound LINKYELP ./assets/sounds/LinkYelp.wav
 
 
 
+
+
 Texture DESERTTRACK ./assets/textures/Desert_road.png 
 
 Texture SQUAREWALLSMALL ./assets/textures/SquareWallSmall.png 
+Texture SQUAREWALLBIG ./assets/textures/SquareWallBig.png
+
 
 Texture WALL1 ./assets/textures/Wall1.png 
 Texture WALL1SIDEWAYS ./assets/textures/Wall1Sideways.png 
@@ -118,6 +122,8 @@ Animation LUCKYFLAG LUCKYFLAG 1 1 4
 Animation WALL1 WALL1 1 1 4
 Animation WALL1SIDEWAYS WALL1SIDEWAYS 1 1 4
 Animation SQUAREWALLSMALL SQUAREWALLSMALL 1 1 4
+Animation SQUAREWALLBIG SQUAREWALLBIG 1 1 4
+
 
 Animation WALL2 WALL2 1 1 4
 Animation GAMEBORDERSIDE GAMEBORDERSIDE 1 1 4
@@ -128,11 +134,14 @@ Animation DESERTTRACK DESERTTRACK 1 1 4
 
 
 Sound CARCRASH ./assets/sounds/CarCrash.wav
-Sound GAMEPLAYMUSIC ./assets/sounds/GamePlayMusic.wav
-Sound GAMESTARTMUSIC ./assets/sounds/GameStartMusic.wav
 Sound SMOKESOUND ./assets/sounds/SmokeSound.wav
 Sound FLAG ./assets/sounds/Flag.wav
 Sound SPECIALFLAG ./assets/sounds/SpecialFlag.wav
-Sound HARDLEVELMUSIC ./assets/sounds/ChallengeLevelMusic.wav
+
 Sound ROUNDCLEAR ./assets/sounds/RoundClear.wav
+
+Music GAMESTARTMUSIC ./assets/sounds/GameStartMusic.wav
+Music GAMEPLAYMUSIC ./assets/sounds/GamePlayMusic.wav
+Music HARDLEVELMUSIC ./assets/sounds/ChallengeLevelMusic.wav
+Music MENUMUSIC ./assets/sounds/MenuMusic.wav
 
