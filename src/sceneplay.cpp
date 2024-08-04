@@ -429,8 +429,11 @@ void ScenePlay::sMovement(){
     float currentTime = GetTime();
 
     static float lastAttackTime = 0.0f;
-     const float ATTACK_COOLDOWN = 0.1f;
+     const float ATTACK_COOLDOWN = 0.15f;
      static bool canAttack = true;
+
+     bool smokeSoundPlaying = false;
+
     for(auto& e : entityManager.getEntities("DYNAMIC")){
 
         //TODO: Implement the movement for DYNAMIC entities
@@ -594,14 +597,23 @@ void ScenePlay::sMovement(){
 
             if (input.attack && canAttack && (currentTime - lastAttackTime >= ATTACK_COOLDOWN) && frameCounter > 0) {
                 spawnSmoke();
+
+                if (!smokeSoundPlaying) {
+                    gameEngine->playSound("SMOKESOUND");
+                    smokeSoundPlaying = true; // Mark sound as playing
+                }
+
                 frameCounter--;  // Decrement smokeFrames each time smoke is spawned
 
                 if (frameCounter <= 0) {
+                   
                     canAttack = false; // Stop attacking once smokeFrames is exhausted
+                   
                 }
 
                 lastAttackTime = currentTime;
             }
+            
 
 
 
@@ -791,6 +803,14 @@ void ScenePlay::sCollision(){
 
                     auto& flag = (de->getID() == "FLAG" || de->getID() == "LUCKYFLAG" || de->getID() == "SPECIALFLAG") ? de : e;
 
+                    if (flag->getID() == "FLAG") {
+                        gameEngine->playSound("FLAG");
+                    }
+                    else if (flag->getID() == "SPECIALFLAG") {
+                        gameEngine->playSound("SPECIALFLAG");
+                    }
+
+
                     flag->destroy();        //Flags dissapear just need to implement score collection now 
 
                     continue;
@@ -810,6 +830,8 @@ void ScenePlay::sCollision(){
 
                     //spawn bang
                     spawnBang();
+
+                    gameEngine->playSound("CARCRASH");
                     
                     //animationComponent.animation = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP");
                     player->destroy();
@@ -863,11 +885,8 @@ void ScenePlay::sCollision(){
 
                     if (!playerHit) {
                         
-                        gameEngine->playSound("LINKHURT");  //play explosion sound
-                        //player->addComponent<CInvincibility>(30);
-                        //int iframes = player->getComponent<CInvincibility>().iframes;
-                        //int iframesRem = player->getComponent<CInvincibility>().iframes;
-                        //playerHealth.current -= enemy->getComponent<CDamage>().damage; // Or whatever damage amount you want
+                        gameEngine->playSound("CARCRASH");  //play car crash sound
+                        
                         
                         spawnBang();
                         player->destroy();
@@ -877,7 +896,7 @@ void ScenePlay::sCollision(){
 
 
                         if (playerHealth.current == 0) {
-                            gameEngine->playSound("LINKDIE");
+                            //gameEngine->playSound("LINKDIE");
                             reload = true;
                         }
 
@@ -1583,6 +1602,8 @@ void ScenePlay::spawnSword() {
 
     sword->addComponent<CBoundingBox>(Vec2(swordWidth, swordHeight));
     sword->addComponent<CTransform>(swordPos, Vec2(0.0f, 0.0f), rotation);
+    
+   
 }
 
    // sword->addComponent<CTransform>(Vec2(playerPos.x+(swordDistance*direction.x), playerPos.y+(swordDistance*direction.y)), Vec2(0.0f, 0.0f), 0.0f);
