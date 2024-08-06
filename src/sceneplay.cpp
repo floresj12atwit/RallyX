@@ -538,16 +538,13 @@ void ScenePlay::sMovement(){
                 }
 
 
+                
 
 
                 if(canSeePlayer){
 
+                  
                     
-                    if (e->getComponent<CTransform>().prevPosition == enemyPos) {
-                        e->getComponent<CTransform>().isStuck = true;
-                        std::cout << "I am STUCK" << std::endl;
-
-                    }
 
                    
                 // Calculate the direction vector towards the player
@@ -556,6 +553,16 @@ void ScenePlay::sMovement(){
 
                 // Check if enemy is aligned with the direction towards the player
                 if (std::abs(direction.x) > std::abs(direction.y)) {
+                    float yDiff = std::abs(enemyPos.y - playerPos.y);
+
+                    // Define the tile height
+                    float tileHeight = 64.0f; // Adjust this value based on your game's tile size
+                    if (yDiff <= tileHeight && enemyVel.x == 0.0f && e->getComponent<CTransform>().prevPosition == enemyPos) {
+                        std::cout << "I'm where you need me to be" << std::endl;
+                        // Snap the enemy to the player's y-position
+                        e->getComponent<CTransform>().position.y = playerPos.y;
+                    }
+
                     // Move horizontally
                     if (direction.x > 0) {
                         std::cout << "Moving right" << std::endl;
@@ -564,18 +571,36 @@ void ScenePlay::sMovement(){
                         e->getComponent<CTransform>().facing = { 1, 0 }; // Facing right
                     }
                     else {
+
+                        
+
+                       
+
                         std::cout << "Moving left" << std::endl;
-                        
-                        
+                       
                         // Align the enemy's bounding box with the player's
                         enemyVel = { -e->getComponent<CFollowPlayer>().speed, 0.0f };
                         e->getComponent<CTransform>().facing = { -1, 0 }; // Facing left
+                        // Check if the enemy is within one tile in the y-axis and is stuck
                         
                         
                     }
                 }
                 else {
+                    /*
+                    float xDiff = std::abs(enemyPos.x - playerPos.x);
+
+                    // Define the tile width
+                    float tileWidth = 64.0f; // Adjust this value based on your game's tile size
+                    if (xDiff <= tileWidth && enemyVel.y == 0.0f && e->getComponent<CTransform>().prevPosition == enemyPos) {
+                        std::cout << "I'm where you need me to be" << std::endl;
+                        // Snap the enemy to the player's x-position
+                        e->getComponent<CTransform>().position.x = playerPos.x;
+                    }
+                    */
+
                     // Move vertically
+
                     if (direction.y > 0) {
                         std::cout << "Moving down" << std::endl;
                          // Align the enemy's bounding box with the player's
@@ -594,14 +619,15 @@ void ScenePlay::sMovement(){
               
                 }
                
-                else {
+                else if(!canSeePlayer){
                     //Random movement
                     
+                    //Figure out a way to get the stuck cars to just change direction
 
                     if (!isMoving) {
                         // Choose a new random direction if the enemy is stationary or hit a wall
                         
-                        canSeePlayer = false;
+                        //e->getComponent<CTransform>().isStuck = false;
                         Vec2 newDirection = getRandomDirection();
                         std::cout << newDirection.x << std::endl;
                         std::cout << newDirection.y << std::endl;
