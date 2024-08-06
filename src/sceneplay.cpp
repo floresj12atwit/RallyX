@@ -3,6 +3,10 @@
 #include <fstream>
 #include <iostream>
 #include <cstdio>
+#include <queue>
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
 #include "physics.hpp"
 
 
@@ -417,6 +421,37 @@ void ScenePlay::sAnimation(){
     }
 }
 
+
+// Helper function to update facing direction based on movement
+void ScenePlay::updateFacingDirection(const std::shared_ptr<Entity>& e, Vec2 velocity) {
+    if (velocity.x > 0) {
+        e->getComponent<CTransform>().facing = { 1, 0 }; // Facing right
+    }
+    else if (velocity.x < 0) {
+        e->getComponent<CTransform>().facing = { -1, 0 }; // Facing left
+    }
+    else if (velocity.y > 0) {
+        e->getComponent<CTransform>().facing = { 0, 1 }; // Facing down
+    }
+    else if (velocity.y < 0) {
+        e->getComponent<CTransform>().facing = { 0, -1 }; // Facing up
+    }
+}
+
+Vec2 ScenePlay::getRandomDirection() {
+    int randomDir = rand() % 4;
+    switch (randomDir) {
+    case 0: return Vec2(1, 0);  // Right
+    case 1: return Vec2(-1, 0); // Left
+    case 2: return Vec2(0, 1);  // Down
+    case 3: return Vec2(0, -1); // Up
+    default: return Vec2(1, 0); // Default to right
+    }
+}
+//My solution relies on the random movement of enemies and them only pursuing if they are perfectly aligned for the player 
+
+
+
 /**
  * Movement System
  * 
@@ -471,44 +506,116 @@ void ScenePlay::sMovement(){
             //std::cout << e->getComponent<CFollowPlayer>().home = 
             
             if (e->getComponent<CFollowPlayer>().has) {
-                bool canSeePlayer;
-               
+                bool canSeePlayer=true;
+
+                
                 //Vec2& playerPos = player->getComponent<CTransform>().position;
                 //Vec2& enemyPos = transform.position;         
 
                 Vec2 playerPos = player->getComponent<CTransform>().position;
                 Vec2 enemyPos = e->getComponent<CTransform>().position;
                 Vec2& enemyVel = e->getComponent<CTransform>().velocity;
+                Vec2 enemySize = e->getComponent<CAnimation>().animation.getScaledSize();
                 e->getComponent<CFollowPlayer>().home = playerPos;
+
+                Vec2 prevVelocity = enemyVel;
+                bool isMoving = (enemyVel.x != 0.0f || enemyVel.y != 0.0);
+
                
 
+                for (auto& tile : entityManager.getEntities("TILE")) {
+                    
 
+
+                    // Skip entities that don't block vision but they all do in this case
+                    if (!tile->getComponent<CBoundingBox>().blocksVision) continue;
+
+                    // Check if this entity blocks the line of sight
+                    if (Physics::entityIntersect(enemyPos, playerPos, tile)) {
+                        canSeePlayer = false;
+                        break;  // No need to check further if view is blocked
+                    }
+                }
+
+
+
+
+                if(canSeePlayer){
+
+                    
+                    if (e->getComponent<CTransform>().prevPosition == enemyPos) {
+                        e->getComponent<CTransform>().isStuck = true;
+                        std::cout << "I am STUCK" << std::endl;
+
+                    }
+
+                   
                 // Calculate the direction vector towards the player
                 Vec2 direction = playerPos - enemyPos;
+                
 
                 // Check if enemy is aligned with the direction towards the player
                 if (std::abs(direction.x) > std::abs(direction.y)) {
                     // Move horizontally
                     if (direction.x > 0) {
+                        std::cout << "Moving right" << std::endl;
+                        enemyPos.x = playerPos.x - enemySize.x / 2; // Align the enemy's bounding box with the player's
                         enemyVel = { e->getComponent<CFollowPlayer>().speed, 0.0f };
                         e->getComponent<CTransform>().facing = { 1, 0 }; // Facing right
                     }
                     else {
+                        std::cout << "Moving left" << std::endl;
+                        
+                        
+                        // Align the enemy's bounding box with the player's
                         enemyVel = { -e->getComponent<CFollowPlayer>().speed, 0.0f };
                         e->getComponent<CTransform>().facing = { -1, 0 }; // Facing left
+                        
+                        
                     }
                 }
                 else {
                     // Move vertically
                     if (direction.y > 0) {
+                        std::cout << "Moving down" << std::endl;
+                         // Align the enemy's bounding box with the player's
+                        enemyPos.y = playerPos.y + enemySize.y / 2;
                         enemyVel = { 0.0f, e->getComponent<CFollowPlayer>().speed };
                         e->getComponent<CTransform>().facing = { 0, 1 }; // Facing down
                     }
                     else {
+                        std::cout << "Moving up" << std::endl;
+                        enemyPos.y = playerPos.y - enemySize.y / 2; // Align the enemy's bounding box with the player's
                         enemyVel = { 0.0f, -e->getComponent<CFollowPlayer>().speed };
                         e->getComponent<CTransform>().facing = { 0, -1 }; // Facing up
                     }
                 }
+                
+              
+                }
+               
+                else {
+                    //Random movement
+                    
+
+                    if (!isMoving) {
+                        // Choose a new random direction if the enemy is stationary or hit a wall
+                        
+                        canSeePlayer = false;
+                        Vec2 newDirection = getRandomDirection();
+                        std::cout << newDirection.x << std::endl;
+                        std::cout << newDirection.y << std::endl;
+                        enemyVel = newDirection * e->getComponent<CFollowPlayer>().speed;
+                        e->getComponent<CTransform>().facing = newDirection;
+                        
+                    }
+                    
+                   
+
+
+                }
+                
+                
 
             }
             else if (e->getComponent<CPatrol>().has) {
@@ -841,6 +948,23 @@ void ScenePlay::sCollision(){
                     continue ;
                 }
 
+                
+                //Enemy Wall collision allow sliding 
+                if (de->getID()=="ENEMY" && e->getTag()=="TILE") {
+
+                    
+                  
+                    
+                    
+                }
+
+                if (de->getID() == "PLAYER" && e->getTag() == "TILE") {
+
+
+
+
+
+                }
 
 
                 //Enemy smokeScreen collision
@@ -852,7 +976,7 @@ void ScenePlay::sCollision(){
                     auto& smoke = (de->getID() == "SMOKE") ? de : e;
                     std::cout << "Enemy hitting smoke" << std::endl;
 
-                    //enemy->getComponent<CTransform>().velocity = { 0,0 };
+                    enemy->getComponent<CTransform>().velocity = { 0,0 };
 
 
                     //Set state to "InSmoke"
@@ -861,6 +985,26 @@ void ScenePlay::sCollision(){
                     
 
                     
+                }
+
+                //Enemy smokeScreen collision
+
+                if ((de->getID() == "ENEMY" && e->getTag() == "SMOKE") ||
+                    (de->getID() == "SMOKE" && e->getID() == "ENEMY")) {
+
+                    auto& enemy = (de->getID() == "ENEMY") ? de : e;
+                    auto& smoke = (de->getID() == "SMOKE") ? de : e;
+                    std::cout << "Enemy hitting smoke" << std::endl;
+
+                    enemy->getComponent<CTransform>().velocity = { 0,0 };
+
+
+                    //Set state to "InSmoke"
+                    enemy->getComponent<CState>().state = "InSmoke";
+
+
+
+
                 }
                
                 
@@ -971,6 +1115,9 @@ void ScenePlay::sCollision(){
                         de->getComponent<CTransform>().velocity.x = 0;
 
                         de->getComponent<CTransform>().position.x -= currentOverlap.x;
+
+                       
+                        
                         
                         
                         
@@ -1461,9 +1608,20 @@ void ScenePlay::spawnPlayer(){
     player->addComponent<CInput>();
     player->addComponent<CHealth>(playerConfig.HEALTH,2);
     player->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("RALLYXPLAYERUP"),true);
-    int playerBX = playerConfig.BX;
-    int playerBY = playerConfig.BY;
-    player->addComponent<CBoundingBox>(Vec2(playerBX,playerBY));
+    float scaledX = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP").getScaledSize().x;
+    float scaledY = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP").getScaledSize().y;
+   
+    float tileSizeX = gameEngine->getTileSizeX();
+    float tileSizeY = gameEngine->getTileSizeY();
+    float bboxSizeX = tileSizeX;
+    float bboxSizeY = tileSizeY;
+    if (scaledX > tileSizeX || scaledY > tileSizeY) {
+        bboxSizeX = scaledX;
+        bboxSizeY = scaledY;
+    }
+
+
+    player->addComponent<CBoundingBox>(Vec2(bboxSizeX,bboxSizeY));
     Vec2 pos = gridToMidPixel(playerConfig.X,playerConfig.Y,player);
     player->addComponent<CTransform>(Vec2(pos.x,pos.y), Vec2(0.0f,0.0f), 0.0f);
     player->addComponent<CLifespan>(fullTank+2);    //Weird hang I found to get the player to look up on respawn 

@@ -47,9 +47,10 @@ class ScenePlay : public Scene{
         void spawnSword();
         void spawnBang();
         void spawnSmoke();
+        
 
-
-
+        void updateFacingDirection(const std::shared_ptr<Entity>& enemy, Vec2 velocity);
+        Vec2 getRandomDirection();
 
         void loadLevel(const std::string& levelPath);
         void reloadScene();

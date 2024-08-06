@@ -29,6 +29,7 @@ class CTransform : public Component{
         Vec2 scale;           /* Current scale (sx,xy) of the entity */
         Vec2 facing = {0,-1};  /* Current (x,y) facing, either 1 or -1 for x and y */  
         float angle;          /* Current rotation angle of the object (deg) */
+        bool isStuck;
 
         CTransform();
         CTransform(const Vec2& position, const Vec2& velocity, float angle);
