@@ -64,6 +64,7 @@ class ScenePlay : public Scene{
         Vec2 getPosition(int rx, int ry, int tx, int ty);
         void renderHealthBar();
         void renderAIDebug();
+        void renderSideBar();
     public:
         ScenePlay(GameEngine* gameEngine,std::string levelPath);
         ScenePlay()=default;

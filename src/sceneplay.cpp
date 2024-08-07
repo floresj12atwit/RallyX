@@ -710,6 +710,7 @@ void ScenePlay::sMovement(){
         //Player movement
         if (e->getID() == "PLAYER") {
 
+            //TraceLog(LOG_INFO, "Player Position: x = %.2f, y = %.2f", e->getComponent<CTransform>().position.x, e->getComponent<CTransform>().position.y);
             auto& input = e->getComponent<CInput>();
             auto& state = e->getComponent<CState>();
 
@@ -971,7 +972,7 @@ void ScenePlay::sCollision(){
 
                 Vec2 resolution(0, 0);
 
-                std::cout << "I am overlapping" << std::endl;
+                //std::cout << "I am overlapping" << std::endl;
 
 
                 //Player-flag collision
@@ -1323,6 +1324,62 @@ void ScenePlay::sCollision(){
         }
     }
 
+    void ScenePlay::renderSideBar() {
+        // Define sidebar dimensions and position
+        auto& playerPos = player->getComponent<CTransform>().position;
+        auto& playerSize = player->getComponent<CAnimation>().animation.getScaledSize();
+
+        int sidebarWidth = gameEngine->getWidth() / 4;
+        int sidebarHeight = gameEngine->getHeight();
+        int sidebarY = playerPos.y- (gameEngine->getHeight()/2)+(playerSize.y/2);
+        int sidebarX = playerPos.x + (gameEngine->getWidth()/2)-sidebarWidth+(playerSize.x/2);
+
+        // Draw sidebar background
+        DrawRectangle(sidebarX, sidebarY, sidebarWidth, sidebarHeight, BLACK);
+
+        int minimapWidth = sidebarWidth;
+        int minimapHeight = sidebarHeight*.55;
+
+        int miniMapY = sidebarY+250;
+        int miniMapX = sidebarX;
+
+        DrawRectangle(miniMapX, miniMapY, minimapWidth, minimapHeight, BLUE);
+
+        // Define the area of the gameboard to display in the minimap
+        float minimapAreaX = 96 - 32;  
+        float minimapAreaY = -1440 - 32;  
+        float minimapAreaWidth = 40*64;  // Width of the gameboard area to display
+        float minimapAreaHeight = 36*64;  // Height of the gameboard area to display
+
+        // Calculate scaling factors
+        float scaleX = minimapWidth / minimapAreaWidth;
+        float scaleY = minimapHeight / minimapAreaHeight;
+
+       
+
+        // Render player on minimap
+        auto& playerTransform = player->getComponent<CTransform>();
+        Vec2 playerMinimapPos = {
+            miniMapX + (playerTransform.position.x - minimapAreaX) * scaleX,
+            miniMapY + (playerTransform.position.y - minimapAreaY) * scaleY
+        };
+        DrawCircle(playerMinimapPos.x, playerMinimapPos.y, 2, DARKBLUE);
+
+        // Render enemies on minimap
+        for (auto& e : entityManager.getEntities("DYNAMIC")) {
+            if (e->getID() == "ENEMY") {
+                auto& enemyTransform = e->getComponent<CTransform>();
+                Vec2 enemyMinimapPos = {
+                    miniMapX + (enemyTransform.position.x - minimapAreaX) * scaleX,
+                    miniMapY + (enemyTransform.position.y - minimapAreaY) * scaleY
+                };
+                DrawCircle(enemyMinimapPos.x, enemyMinimapPos.y, 2, RED);
+            }
+        }
+
+    }
+
+
 /**
  * Render System
  * 
@@ -1337,6 +1394,7 @@ void ScenePlay::sRender(){
     //********** Raylib Drawing Content **********
         if(renderTextures){
             renderTex();
+            renderSideBar();
             if(renderHealth)
                 renderHealthBar();
         }
