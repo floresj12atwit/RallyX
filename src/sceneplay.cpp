@@ -1363,7 +1363,7 @@ void ScenePlay::sCollision(){
             miniMapX + (playerTransform.position.x - minimapAreaX) * scaleX,
             miniMapY + (playerTransform.position.y - minimapAreaY) * scaleY
         };
-        DrawCircle(playerMinimapPos.x, playerMinimapPos.y, 2, DARKBLUE);
+        DrawCircle(playerMinimapPos.x, playerMinimapPos.y, 4, DARKBLUE);
 
         // Render enemies on minimap
         for (auto& e : entityManager.getEntities("DYNAMIC")) {
@@ -1373,7 +1373,19 @@ void ScenePlay::sCollision(){
                     miniMapX + (enemyTransform.position.x - minimapAreaX) * scaleX,
                     miniMapY + (enemyTransform.position.y - minimapAreaY) * scaleY
                 };
-                DrawCircle(enemyMinimapPos.x, enemyMinimapPos.y, 2, RED);
+                DrawCircle(enemyMinimapPos.x, enemyMinimapPos.y, 4, RED);
+            }
+        }
+
+        // Render flags on minimap
+        for (auto& e : entityManager.getEntities("TILE")) {
+            if (e->getID() == "FLAG"||e->getID()== "SPECIALFLAG"|| e->getID()=="LUCKYFLAG") {
+                auto& flagTransform = e->getComponent<CTransform>();
+                Vec2 flagMiniPos = {
+                    miniMapX + (flagTransform.position.x - minimapAreaX)* scaleX,
+                    miniMapY + (flagTransform.position.y - minimapAreaY) * scaleY
+                };
+                DrawCircle(flagMiniPos.x, flagMiniPos.y, 4, YELLOW);
             }
         }
 
