@@ -104,6 +104,8 @@ void ScenePlay::loadLevel(const std::string& levelPath){
             // Get the center pixel position adjusted for the entity size
             Vec2 pos = gridToMidPixel(newGridX, newGridY, e);
 
+            playerStart = pos;
+
             e->addComponent<CTransform>(Vec2(pos.x, pos.y), Vec2(0.0f, 0.0f), 0.0f);
             e->getComponent<CTransform>().prevPosition.x = pos.x;
             e->getComponent<CTransform>().prevPosition.y = pos.y;
@@ -161,6 +163,9 @@ void ScenePlay::loadLevel(const std::string& levelPath){
 
                 // Get the center pixel position adjusted for the entity size
                 Vec2 pos = gridToMidPixel(newGridX, newGridY, e);
+
+                enemyStartPositions.push_back(pos);
+
 
                 //pos.y -= scaledY;
                 e->addComponent<CTransform>(Vec2(pos.x, pos.y), Vec2(0.0f, 0.0f), 0.0f);
@@ -466,7 +471,7 @@ void ScenePlay::sMovement(){
     static float lastAttackTime = 0.0f;
      const float ATTACK_COOLDOWN = 0.15f;
      static bool canAttack = true;
-
+     float maxSpeed = playerConfig.SPEED;
     
 
     for(auto& e : entityManager.getEntities("DYNAMIC")){
@@ -493,6 +498,7 @@ void ScenePlay::sMovement(){
         }
         */
         
+        
        
 
 
@@ -517,6 +523,14 @@ void ScenePlay::sMovement(){
                 Vec2& enemyVel = e->getComponent<CTransform>().velocity;
                 Vec2 enemySize = e->getComponent<CAnimation>().animation.getScaledSize();
                 e->getComponent<CFollowPlayer>().home = playerPos;
+
+
+                if (frameCounter < startMoveFrames) {
+                    // Move enemies forward (change this direction if needed)
+                    enemyVel = Vec2(0.0f, -e->getComponent<CFollowPlayer>().speed); // Moving to the right for example
+                }
+
+
 
                 Vec2 prevVelocity = enemyVel;
                 bool isMoving = (enemyVel.x != 0.0f || enemyVel.y != 0.0);
@@ -641,7 +655,9 @@ void ScenePlay::sMovement(){
 
                 }
                 
-                
+                if (frameCounter < startMoveFrames) {
+                    frameCounter++;
+                }
 
             }
             else if (e->getComponent<CPatrol>().has) {
@@ -690,6 +706,14 @@ void ScenePlay::sMovement(){
             static Vec2 lastVelocity = { 0.0f, 0.0f };  // Remember the last valid velocity
             static Vec2 lastFacing = { 0, 0 };          // Remember the last facing direction
             
+            if (std::abs(transform.velocity.x) > maxSpeed) {
+                transform.velocity.x = (transform.velocity.x > 0) ? maxSpeed : -maxSpeed;
+            }
+
+            // Clamp velocity in the y-direction
+            if (std::abs(transform.velocity.y) > maxSpeed) {
+                transform.velocity.y = (transform.velocity.y > 0) ? maxSpeed : -maxSpeed;
+            }
             
             if (input.up && !input.down && !input.left && !input.right) {
                 transform.velocity = { 0.0f, -velocity };
@@ -798,8 +822,10 @@ void ScenePlay::sMovement(){
             //std::cout << e->getID() << std::endl;
             if (e->getID() == "BANG" && lifespan.remaining <= 0) {
                 e->destroy();
-                reload = true;
-
+                RoundOver();
+                if (gameLives == 0) {
+                    reload = true;
+                }
             }
 
             else if (lifespan.remaining <= 0) {
@@ -967,6 +993,7 @@ void ScenePlay::sCollision(){
                     
                     //animationComponent.animation = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP");
                     player->destroy();
+                    gameLives--;
                     
                     
                  
@@ -1047,11 +1074,11 @@ void ScenePlay::sCollision(){
                     auto& enemy = (de->getID() == "ENEMY") ? de : e;
 
                     auto& playerHealth = player->getComponent<CHealth>();
-
+                    
 
                     
 
-                    /*
+                    
                     if (!playerHit) {
                         
                         gameEngine->playSound("CARCRASH");  //play car crash sound
@@ -1062,18 +1089,24 @@ void ScenePlay::sCollision(){
                         enemy->destroy();
 
                         playerHit = true;
+                        gameLives--;
+                        
+                        //Respawn player at starting point and respawn enemies too
+                        //Round over is called at the same time spawnbang is destroyed so that it lingers on the screen (in lifespan section of movement)
 
 
-                        if (playerHealth.current == 0) {
+
+                        if (gameLives == 0) {
                             //gameEngine->playSound("LINKDIE");
-                            reload = true;
+                           // GameOver();
+                            //reload = true;
                         }
                         
 
                        
                        
                     }
-                    */
+                    
                     
                     if (player->getComponent<CInvincibility>().iframes == 0) {
                         //std::cout << "Entered " << std::endl;
@@ -1136,11 +1169,11 @@ void ScenePlay::sCollision(){
                     //de on the left of e 
                     if (de->getComponent<CTransform>().prevPosition.x < e->getComponent<CTransform>().prevPosition.x) {
 
-
                        
                         de->getComponent<CTransform>().velocity.x = 0;
 
                         de->getComponent<CTransform>().position.x -= currentOverlap.x;
+                        
 
                        
                         
@@ -1285,10 +1318,11 @@ void ScenePlay::sGUI(){
                                     ImGui::PushID(entity->getID().c_str());
                                     
                                     if (ImGui::Button("D")) {
+                                        /*
                                         if (entity->getID() == "PLAYER") {      //game resets when player is deleted 
                                             reload=true;
                                         }
-                                        else
+                                        else */
                                             entity->destroy(); // Call the destroy method for the entity
                                     }
                                     
@@ -1327,6 +1361,7 @@ void ScenePlay::sGUI(){
                             ImGui::PushID(entity->getID().c_str());
                            
                             if (ImGui::Button("D")) {
+
                                 if (entity->getTag() == "PLAYER") {
                                     reload=true;
                                 }
@@ -1606,6 +1641,29 @@ void ScenePlay::spawnBang() {
 }
 
 
+void  ScenePlay::RoundOver() {
+    // Reset player position
+    spawnPlayer();
+   
+      
+
+    // Reset enemy positions  if an enemy dies it is no longer on the game board I kinda like this concept sacrificing lives for an easier game 
+    int enemyIndex = 0;
+    for (auto& e : entityManager.getEntities("DYNAMIC")) {
+        if (e->getID() == "ENEMY") {
+            e->getComponent<CTransform>().position = enemyStartPositions[enemyIndex];
+            e->getComponent<CTransform>().prevPosition = enemyStartPositions[enemyIndex];
+
+
+            
+            e->getComponent<CTransform>().velocity = Vec2(0.0f, 0.0f);
+            e->getComponent<CState>().state = "CHASING";  // Or the appropriate initial state
+
+            ++enemyIndex;
+        }
+    }
+
+}
 //Take user to game over screen 
 void GameOver() {
 
@@ -1628,9 +1686,9 @@ void spawnFlags() {
  * 
  */
 void ScenePlay::spawnPlayer(){
-    //TODO: Sample player spawning, you will need to update this once you have some more mechanics finished
+    
     player=entityManager.addEntity("DYNAMIC", "PLAYER");
-    //player->addComponent<CState>("STANDD");
+    
     player->addComponent<CInput>();
     player->addComponent<CHealth>(playerConfig.HEALTH,2);
     player->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("RALLYXPLAYERUP"),true);

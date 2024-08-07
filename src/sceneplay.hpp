@@ -33,7 +33,10 @@ class ScenePlay : public Scene{
 
         int fullTank=3000;//This is going to be used in conjunction with the lifespan to represent the fuel the player has left 
 
-
+        std::vector<Vec2> enemyStartPositions;
+        Vec2 playerStart;
+        int startMoveFrames = 10;
+        int gameLives=3;
 
         void init(const std::string& levelPath);
         void sAnimation();
@@ -47,6 +50,7 @@ class ScenePlay : public Scene{
         void spawnSword();
         void spawnBang();
         void spawnSmoke();
+        void RoundOver();
         
 
         void updateFacingDirection(const std::shared_ptr<Entity>& enemy, Vec2 velocity);
