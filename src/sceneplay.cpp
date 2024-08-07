@@ -19,7 +19,9 @@
  */
 ScenePlay::ScenePlay(GameEngine* gameEngine, std::string levelPath):Scene(gameEngine){
     this->levelPath=levelPath;
+    
     init(this->levelPath);
+    renderStartTransition(3);
 }
 
 /**
@@ -824,8 +826,21 @@ void ScenePlay::sMovement(){
                 e->destroy();
                 RoundOver();
                 if (gameLives == 0) {
-                    reload = true;
+                    renderGameOverTransition(3);
+                    //spawnGameOver();
+                    gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
+                   
                 }
+            }
+
+            else if (e->getID() == "GAMEOVER" && lifespan.remaining <= 0) {
+                e->destroy();
+   
+              
+                    //GameOver();
+
+                    reload = true;
+                
             }
 
             else if (lifespan.remaining <= 0) {
@@ -1240,8 +1255,65 @@ void ScenePlay::sCollision(){
     }
 
 
+//Going to render startgame and end game transitions 
+    void ScenePlay::renderStartTransition(float transitionDuration) {
+        float elapsedTime = 0.0f;
+        while (elapsedTime < transitionDuration) {
+            BeginDrawing();
+            ClearBackground(BLACK);
 
 
+            std::string message = "Starting game...";
+
+            const Font& font = gameEngine->getAssets().getFont("orbitron");
+            // Draw the "Game Over" text in the center of the screen
+            int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
+            int screenWidth = GetScreenWidth();
+            int screenHeight = GetScreenHeight();
+            int textPosX = (screenWidth - textWidth) / 2;
+            int textPosY = screenHeight / 2 - 32; // Adjust for text height
+
+            DrawTextEx(font, message.c_str(), Vector2(textPosX, textPosY), 64, 1, WHITE);
+
+
+            // Calculate fade effect
+            //float alpha = (elapsedTime / transitionDuration) * 255;
+            //DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(fadeColor, alpha / 255.0f));
+
+            EndDrawing();
+
+            elapsedTime += GetFrameTime();
+    }
+ }
+    void ScenePlay::renderGameOverTransition(float transitionDuration) {
+        float elapsedTime = 0.0f;
+        while (elapsedTime < transitionDuration) {
+            BeginDrawing();
+            ClearBackground(BLACK);
+
+
+            std::string message = "Game Over!";
+
+            const Font& font = gameEngine->getAssets().getFont("orbitron");
+            // Draw the "Game Over" text in the center of the screen
+            int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
+            int screenWidth = GetScreenWidth();
+            int screenHeight = GetScreenHeight();
+            int textPosX = (screenWidth - textWidth) / 2;
+            int textPosY = screenHeight / 2 - 32; // Adjust for text height
+
+            DrawTextEx(font, message.c_str(), Vector2(textPosX, textPosY), 64, 1, WHITE);
+
+
+            // Calculate fade effect
+            //float alpha = (elapsedTime / transitionDuration) * 255;
+            //DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(fadeColor, alpha / 255.0f));
+
+            EndDrawing();
+
+            elapsedTime += GetFrameTime();
+        }
+    }
 
 /**
  * Render System
@@ -1636,6 +1708,21 @@ void ScenePlay::spawnBang() {
 
     bang->addComponent<CLifespan>(50);
     bang->addComponent<CTransform>(Vec2(playerPos.x, playerPos.y), Vec2(0.0f, 0.0f), 0.0f);
+
+
+}
+
+//This may not be necessary
+void ScenePlay::spawnGameOver() {
+
+    Vec2 playerPos = player->getComponent<CTransform>().position;
+
+    std::shared_ptr<Entity> gameOver;
+    gameOver = entityManager.addEntity("DYNAMIC", "GAMEOVER");  //This is dynamic because it's life span is the way I linger on the dead screen and then restart
+    gameOver->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("CRASH"), true);
+
+    gameOver->addComponent<CLifespan>(60);
+    gameOver->addComponent<CTransform>(Vec2(playerPos.x, playerPos.y), Vec2(0.0f, 0.0f), 0.0f);
 
 
 }

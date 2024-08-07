@@ -51,6 +51,9 @@ class ScenePlay : public Scene{
         void spawnBang();
         void spawnSmoke();
         void RoundOver();
+        void spawnGameOver();
+        void renderStartTransition(float duration);
+        void renderGameOverTransition(float duration);
         
 
         void updateFacingDirection(const std::shared_ptr<Entity>& enemy, Vec2 velocity);
