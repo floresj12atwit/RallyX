@@ -21,7 +21,7 @@ ScenePlay::ScenePlay(GameEngine* gameEngine, std::string levelPath):Scene(gameEn
     this->levelPath=levelPath;
     
     init(this->levelPath);
-    renderStartTransition(3);
+    renderStartTransition(1);
 }
 
 /**
@@ -559,6 +559,7 @@ void ScenePlay::sMovement(){
 
                 if(canSeePlayer){
 
+
                   
                     
 
@@ -566,9 +567,16 @@ void ScenePlay::sMovement(){
                 // Calculate the direction vector towards the player
                 Vec2 direction = playerPos - enemyPos;
                 
+                if (player->getComponent<CTransform>().velocity == Vec2(0, 0)) {
+                    //direction = get;
 
+                    // Set the enemy's velocity to move straight towards the player
+                    e->getComponent<CTransform>().velocity = prevVelocity;
+                   
+                }
+                
                 // Check if enemy is aligned with the direction towards the player
-                if (std::abs(direction.x) > std::abs(direction.y)) {
+                else if (std::abs(direction.x) > std::abs(direction.y)) {
                     float yDiff = std::abs(enemyPos.y - playerPos.y);
 
                     // Define the tile height
@@ -638,7 +646,7 @@ void ScenePlay::sMovement(){
                 else if(!canSeePlayer){
                     //Random movement
                     
-                    //Figure out a way to get the stuck cars to just change direction
+                    
 
                     if (!isMoving) {
                         // Choose a new random direction if the enemy is stationary or hit a wall
@@ -826,7 +834,7 @@ void ScenePlay::sMovement(){
                 e->destroy();
                 RoundOver();
                 if (gameLives == 0) {
-                    renderGameOverTransition(3);
+                    renderGameOverTransition(1);
                     //spawnGameOver();
                     gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
                    
