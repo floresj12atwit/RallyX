@@ -142,6 +142,13 @@ void ScenePlay::loadLevel(const std::string& levelPath){
 
 
             }
+            if (type == "SPEEDUPTILEUP" || type == "SPEEDUPTILEDOWN") {
+                bboxSizeY = bboxSizeY - 30;
+                e->getComponent<CBoundingBox>().blocksVision = false;
+                e->addComponent<CBoundingBox>(Vec2(bboxSizeX, bboxSizeY));
+
+
+            }
 
         }
         if (str == "PLAYER") {
@@ -733,6 +740,7 @@ void ScenePlay::sMovement(){
             static Vec2 lastVelocity = { 0.0f, 0.0f };  // Remember the last valid velocity
             static Vec2 lastFacing = { 0, 0 };          // Remember the last facing direction
             
+            /*
             if (std::abs(transform.velocity.x) > maxSpeed) {
                 transform.velocity.x = (transform.velocity.x > 0) ? maxSpeed : -maxSpeed;
             }
@@ -741,6 +749,7 @@ void ScenePlay::sMovement(){
             if (std::abs(transform.velocity.y) > maxSpeed) {
                 transform.velocity.y = (transform.velocity.y > 0) ? maxSpeed : -maxSpeed;
             }
+            */
             
             if (input.up && !input.down && !input.left && !input.right) {
                 transform.velocity = { 0.0f, -velocity };
@@ -862,6 +871,7 @@ void ScenePlay::sMovement(){
                 }
             }
             else if (e->getID() == "PLAYER" && lifespan.remaining <= 0) {
+                gameEngine->stopMusic("GAMEPLAYMUSIC");
                 renderGameOverTransition(1);
                 gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
             }
@@ -1103,6 +1113,23 @@ void ScenePlay::sCollision(){
 
 
 
+                }
+               
+                //Player Speedtile collision
+
+                if ((de->getID() == "PLAYER" && (e->getID() == "SPEEDUPTILEUP" || e->getID() == "SPEEDUPTILEDOWN")) ||
+                    ((de->getID() == "SPEEDUPTILEUP" || de->getID() == "SPEEDUPTILEDOWN") && e->getID() == "PLAYER")) {
+
+                    auto& playerTransform = player->getComponent<CTransform>();
+                    std::cout << "Player hitting SpeedUpTile" << std::endl;
+
+                    float SPEED_INCREMENT = 1.2f;
+
+                    // Start or reset the speed-up effect
+                    playerTransform.velocity.x += SPEED_INCREMENT * playerTransform.facing.x;
+                    playerTransform.velocity.y += SPEED_INCREMENT * playerTransform.facing.y;
+
+                    continue;
                 }
                
                 

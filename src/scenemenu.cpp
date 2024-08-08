@@ -14,9 +14,9 @@ void SceneMenu::init(){
     title="RALLY X";
     nameText = "By Joshua Flores";
 
-    menuStrings.push_back("Level 1");
-    menuStrings.push_back("Level 2");
-    menuStrings.push_back("Level 3");
+    menuStrings.push_back("Course 1");
+    menuStrings.push_back("Course 2");
+    menuStrings.push_back("Course 3");
     menuText = "Up: W      Down: S      Play: Space      ESC: Quit";
 
     levelPaths.push_back("level1.txt");
@@ -29,6 +29,7 @@ void SceneMenu::init(){
     registerAction(KEY_SPACE, "PLAY");
     registerAction(KEY_ESCAPE, "QUIT");
 
+    gameEngine->stopMusic("GAMEPLAYMUSIC");
     gameEngine->playMusic("MENUMUSIC");
 }
 
