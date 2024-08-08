@@ -21,7 +21,10 @@ ScenePlay::ScenePlay(GameEngine* gameEngine, std::string levelPath):Scene(gameEn
     this->levelPath=levelPath;
     
     init(this->levelPath);
-    renderStartTransition(1);
+    gameEngine->stopMusic("MENUMUSIC");
+    gameEngine->playSound("GAMESTARTMUSIC");
+    renderStartTransition(5);
+    
 }
 
 /**
@@ -36,6 +39,16 @@ ScenePlay::ScenePlay(GameEngine* gameEngine, std::string levelPath):Scene(gameEn
  */
 void ScenePlay::init(const std::string& levelPath){
     loadLevel(levelPath);
+    if (levelPath == "level1.txt") {
+        courseNumber = "1";
+    }
+    else if (levelPath == "level2.txt") {
+        courseNumber = "2";
+    }
+    else if (levelPath == "level3.txt") {
+        courseNumber = "3";
+    }
+    gameEngine->playMusic("GAMEPLAYMUSIC");
     spawnPlayer();
 
     //TODO: Add actions for UP, DOWN, LEFT, RIGHT, and ATTACK
@@ -116,6 +129,9 @@ void ScenePlay::loadLevel(const std::string& levelPath){
                 e->getComponent<CBoundingBox>().blocksVision = false;
                 e->addComponent<CBoundingBox>(Vec2(bboxSizeX/2, bboxSizeY/2));
 
+                
+
+
 
             }
 
@@ -175,7 +191,7 @@ void ScenePlay::loadLevel(const std::string& levelPath){
                 e->getComponent<CTransform>().prevPosition.y = pos.y;
                 e->getComponent<CTransform>().velocity.x = Speed;
                 e->getComponent<CTransform>().velocity.y = Speed;
-                e->addComponent<CHealth>(Health,Health);
+                //e->addComponent<CHealth>(Health,Health);
                 e->addComponent<CDamage>();
                 //e->addComponent<CInvincibility>();
                 
@@ -771,9 +787,11 @@ void ScenePlay::sMovement(){
                 
 
                 frameCounter--;  // Decrement smokeFrames each time smoke is spawned
+                e->getComponent<CLifespan>().remaining -= 30;
+
 
                 if (frameCounter <= 0) {
-                   
+                    
                     canAttack = false; // Stop attacking once smokeFrames is exhausted
                    
                 }
@@ -833,24 +851,21 @@ void ScenePlay::sMovement(){
             //std::cout << e->getID() << std::endl;
             if (e->getID() == "BANG" && lifespan.remaining <= 0) {
                 e->destroy();
+                
                 RoundOver();
                 if (gameLives == 0) {
                     renderGameOverTransition(1);
                     //spawnGameOver();
+                    gameEngine->stopMusic("GAMEPLAYMUSIC");
                     gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
                    
                 }
             }
-
-            else if (e->getID() == "GAMEOVER" && lifespan.remaining <= 0) {
-                e->destroy();
-   
-              
-                    //GameOver();
-
-                    reload = true;
-                
+            else if (e->getID() == "PLAYER" && lifespan.remaining <= 0) {
+                renderGameOverTransition(1);
+                gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
             }
+            
 
             else if (lifespan.remaining <= 0) {
                 e->destroy();
@@ -987,9 +1002,15 @@ void ScenePlay::sCollision(){
 
                     if (flag->getID() == "FLAG") {
                         gameEngine->playSound("FLAG");
+                        score += 200;
                     }
                     else if (flag->getID() == "SPECIALFLAG") {
                         gameEngine->playSound("SPECIALFLAG");
+
+                        if (score == 0) {
+                            score += 500;
+                        }
+                        score = score * 2;
                     }
 
 
@@ -1054,7 +1075,7 @@ void ScenePlay::sCollision(){
                     std::cout << "Enemy hitting smoke" << std::endl;
 
                     enemy->getComponent<CTransform>().velocity = { 0,0 };
-
+                    //enemy->getComponent<CTransform>().facing = { 1,0 };
 
                     //Set state to "InSmoke"
                     enemy->getComponent<CState>().state = "InSmoke";
@@ -1111,6 +1132,8 @@ void ScenePlay::sCollision(){
                         spawnBang();
                         player->destroy();
                         enemy->destroy();
+                        gameEngine->stopMusic("GAMEPLAYMUSIC");
+
 
                         playerHit = true;
                         gameLives--;
@@ -1120,11 +1143,7 @@ void ScenePlay::sCollision(){
 
 
 
-                        if (gameLives == 0) {
-                            //gameEngine->playSound("LINKDIE");
-                           // GameOver();
-                            //reload = true;
-                        }
+                       
                         
 
                        
@@ -1325,6 +1344,9 @@ void ScenePlay::sCollision(){
     }
 
     void ScenePlay::renderSideBar() {
+
+        const Font& font = gameEngine->getAssets().getFont("orbitron");
+
         // Define sidebar dimensions and position
         auto& playerPos = player->getComponent<CTransform>().position;
         auto& playerSize = player->getComponent<CAnimation>().animation.getScaledSize();
@@ -1337,6 +1359,8 @@ void ScenePlay::sCollision(){
         // Draw sidebar background
         DrawRectangle(sidebarX, sidebarY, sidebarWidth, sidebarHeight, BLACK);
 
+
+        //Begin MINIMAP code
         int minimapWidth = sidebarWidth;
         int minimapHeight = sidebarHeight*.55;
 
@@ -1385,9 +1409,103 @@ void ScenePlay::sCollision(){
                     miniMapX + (flagTransform.position.x - minimapAreaX)* scaleX,
                     miniMapY + (flagTransform.position.y - minimapAreaY) * scaleY
                 };
-                DrawCircle(flagMiniPos.x, flagMiniPos.y, 4, YELLOW);
+                if (e->getID() == "SPECIALFLAG") {
+                    DrawCircle(flagMiniPos.x, flagMiniPos.y, 4, ORANGE);
+                }
+                else if (e->getID() == "LUCKYFLAG") {
+                    DrawCircle(flagMiniPos.x, flagMiniPos.y, 4, WHITE);
+                }
+                else {  //normal flag
+                    DrawCircle(flagMiniPos.x, flagMiniPos.y, 4, YELLOW);
+                   
+
+                }
             }
         }
+        
+
+        //END MINIMAP CODE
+
+
+
+        // Render the player's lives on the sidebar
+
+
+        Texture2D lifeSprite = gameEngine->getAssets().getTexture("LIFESPRITE"); // Assuming the sprite is called "lifeSprite"
+        int size = 64;
+        lifeSprite.width = 64;
+        lifeSprite.height = 64;
+
+        int livesStartY = sidebarY + GetScreenHeight() - 60; // Y position for lives display
+        int livesStartX = sidebarX- 20; // Starting X position for lives display
+        int livesSpacing = 10; // Spacing between life icons
+
+        for (int i = 1; i <= gameLives; i++) {
+            DrawTexture(lifeSprite, livesStartX + (i * (size + livesSpacing)), livesStartY, WHITE);
+        }//End render player lives
+
+
+        // Render the fuel gauge
+        std::string fuel = "Fuel";
+
+        int fuelTextWidth = MeasureTextEx(font, fuel.c_str(), 64, 1).x; // Get the width of the text
+        int fuelTextPosX = sidebarX + 130;
+        int fuelTextPosY = sidebarY + 180;
+        DrawTextEx(font, fuel.c_str(), Vector2(fuelTextPosX, fuelTextPosY), 32, 1, WHITE);
+
+
+        auto& playerLifespan = player->getComponent<CLifespan>();
+        float fuelPercentage = static_cast<float>(playerLifespan.remaining) / static_cast<float>(playerLifespan.total);
+
+        int gaugeWidth = sidebarWidth ; // Width of the fuel gauge
+        int gaugeHeight = 20; // Fixed height of the fuel gauge
+        int gaugeX = sidebarX ; // Position X of the gauge
+        int gaugeY = sidebarY + 210; // Position Y of the gauge (near the bottom of the sidebar)
+
+        // Draw the background of the fuel gauge
+        DrawRectangle(gaugeX, gaugeY, gaugeWidth, gaugeHeight, GRAY);
+
+        // Draw the current fuel level
+        int fuelWidth = static_cast<int>(gaugeWidth * fuelPercentage); // Width based on fuel percentage
+
+        int fuelX = gaugeX + (gaugeWidth - fuelWidth);
+
+        DrawRectangle(fuelX, gaugeY, fuelWidth, gaugeHeight, YELLOW); // The fuel level
+
+
+        // Render the high score area
+        int highScoreY = sidebarY + 50; // Position Y of the high score area
+        int highScoreX = sidebarX + 20; // Position X of the high score area
+
+        //std::string highScoreMessage = "High Score: " + std::to_string(gameEngine->getHighScore());
+        //DrawText(highScoreMessage.c_str(), highScoreX, highScoreY, 32, YELLOW);
+
+
+        int scoreY = sidebarY + 50; // Position Y of the score area
+        int scoreX = sidebarX + 20; // Position X of the score area
+
+        std::string scoreMessage = "Score: " + std::to_string(score);
+        DrawText(scoreMessage.c_str(), scoreX, scoreY, 32, PINK);
+
+
+
+
+        //Course Number 
+        std::string course = "Course: " + courseNumber;
+        
+
+        
+        // Draw the "Game Over" text in the center of the screen
+        int textWidth = MeasureTextEx(font, course.c_str(), 64, 1).x; // Get the width of the text
+        int screenWidth = GetScreenWidth();
+        int screenHeight = GetScreenHeight();
+        int textPosX = sidebarX;
+        int textPosY = sidebarY + GetScreenHeight() - 80;
+        DrawTextEx(font, course.c_str(), Vector2(textPosX, textPosY), 32, 1, WHITE);
+        //End Course number
+
+
+
 
     }
 
@@ -1784,7 +1902,7 @@ void ScenePlay::spawnBang() {
     bang = entityManager.addEntity("DYNAMIC", "BANG");  //This is dynamic because it's life span is the way I linger on the dead screen and then restart
     bang->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("CRASH"), true);
 
-    bang->addComponent<CLifespan>(50);
+    bang->addComponent<CLifespan>(90);
     bang->addComponent<CTransform>(Vec2(playerPos.x, playerPos.y), Vec2(0.0f, 0.0f), 0.0f);
 
 
@@ -1808,6 +1926,7 @@ void ScenePlay::spawnGameOver() {
 
 void  ScenePlay::RoundOver() {
     // Reset player position
+    gameEngine->playMusic("GAMEPLAYMUSIC");
     spawnPlayer();
    
       
@@ -1855,7 +1974,7 @@ void ScenePlay::spawnPlayer(){
     player=entityManager.addEntity("DYNAMIC", "PLAYER");
     
     player->addComponent<CInput>();
-    player->addComponent<CHealth>(playerConfig.HEALTH,2);
+    //player->addComponent<CHealth>(playerConfig.HEALTH,2);
     player->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("RALLYXPLAYERUP"),true);
     float scaledX = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP").getScaledSize().x;
     float scaledY = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP").getScaledSize().y;

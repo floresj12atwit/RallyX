@@ -31,12 +31,16 @@ class ScenePlay : public Scene{
         bool followCam=true;           /* If the locked follow camera should be active, false=room cam */
         Vec2 room = {0,0};              /* Current (x,y) room. (0,0) is the starting room */
 
+        std::string courseNumber;
+
         int fullTank=3000;//This is going to be used in conjunction with the lifespan to represent the fuel the player has left 
 
         std::vector<Vec2> enemyStartPositions;
         Vec2 playerStart;
         int startMoveFrames = 10;
         int gameLives=3;
+        int round;
+        int score=0; 
 
         void init(const std::string& levelPath);
         void sAnimation();

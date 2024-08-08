@@ -59,6 +59,9 @@ Sound LINKYELP ./assets/sounds/LinkYelp.wav
 
 
 
+
+Texture LIFESPRITE ./assets/textures/LifeSprite.png 
+
 Texture DESERTTRACK ./assets/textures/Desert_road.png 
 
 Texture SQUAREWALLSMALL ./assets/textures/SquareWallSmall.png 
@@ -119,6 +122,8 @@ Animation LUCKYFLAG LUCKYFLAG 1 1 4
 
 
 
+
+
 Animation WALL1 WALL1 1 1 4
 Animation WALL1SIDEWAYS WALL1SIDEWAYS 1 1 4
 Animation SQUAREWALLSMALL SQUAREWALLSMALL 1 1 4
@@ -140,7 +145,7 @@ Sound SPECIALFLAG ./assets/sounds/SpecialFlag.wav
 
 Sound ROUNDCLEAR ./assets/sounds/RoundClear.wav
 
-Music GAMESTARTMUSIC ./assets/sounds/GameStartMusic.wav
+SOUND GAMESTARTMUSIC ./assets/sounds/GameStartMusic.wav
 Music GAMEPLAYMUSIC ./assets/sounds/GamePlayMusic.wav
 Music HARDLEVELMUSIC ./assets/sounds/ChallengeLevelMusic.wav
 Music MENUMUSIC ./assets/sounds/MenuMusic.wav
