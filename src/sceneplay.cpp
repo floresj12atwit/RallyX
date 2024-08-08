@@ -23,6 +23,7 @@ ScenePlay::ScenePlay(GameEngine* gameEngine, std::string levelPath):Scene(gameEn
     init(this->levelPath);
     gameEngine->stopMusic("MENUMUSIC");
     gameEngine->playSound("GAMESTARTMUSIC");
+    
     renderStartTransition(5);
     
 }
@@ -48,6 +49,7 @@ void ScenePlay::init(const std::string& levelPath){
     else if (levelPath == "level3.txt") {
         courseNumber = "3";
     }
+    
     gameEngine->playMusic("GAMEPLAYMUSIC");
     spawnPlayer();
 
@@ -505,7 +507,7 @@ void ScenePlay::sMovement(){
         //1. If the entity is the player, use the input bools to determine direction and x velocity.
         //2. Ensure that the player cannot move diagonally
         //3. This is also a good place to update the lifespan component
-        
+       
 
         auto& transform = e->getComponent<CTransform>();
         auto& state = e->getComponent<CState>();
@@ -532,6 +534,7 @@ void ScenePlay::sMovement(){
 
         //Enemy Movement
         if (e->getID() == "ENEMY") {
+           
 
             //std::string AIType = e->getComponent<CAnimation>().animation.getName();
             //std::cout << e->getComponent<CFollowPlayer>().home = 
@@ -577,7 +580,13 @@ void ScenePlay::sMovement(){
                 }
 
 
-                
+                if (roundClear) {
+                    e->getComponent<CTransform>().velocity = { 0,0 };
+                    e->getComponent<CTransform>().position = e->getComponent<CTransform>().prevPosition;
+                    canSeePlayer = false;
+                    isMoving = true;
+
+                }
 
 
                 if(canSeePlayer){
@@ -733,6 +742,7 @@ void ScenePlay::sMovement(){
         //Player movement
         if (e->getID() == "PLAYER") {
 
+           
             //TraceLog(LOG_INFO, "Player Position: x = %.2f, y = %.2f", e->getComponent<CTransform>().position.x, e->getComponent<CTransform>().position.y);
             auto& input = e->getComponent<CInput>();
             auto& state = e->getComponent<CState>();
@@ -808,6 +818,12 @@ void ScenePlay::sMovement(){
                 lastAttackTime = currentTime;
             }
             
+            if (roundClear) {
+                e->getComponent<CTransform>().velocity = { 0,0 };
+                e->getComponent<CTransform>().position = e->getComponent<CTransform>().prevPosition;
+                
+
+            }
 
 
 
@@ -870,7 +886,7 @@ void ScenePlay::sMovement(){
                    
                 }
             }
-            else if (e->getID() == "PLAYER" && lifespan.remaining <= 0) {
+            else if (e->getID() == "PLAYER" && lifespan.remaining <= 0 && !roundClear) {
                 gameEngine->stopMusic("GAMEPLAYMUSIC");
                 renderGameOverTransition(1);
                 gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
@@ -976,7 +992,13 @@ void ScenePlay::sCollision(){
 
                 continue;
             }
+            //Enemy does not interact with speed tiles 
+            if ((de->getID() == "ENEMY" && (e->getID() == "SPEEDUPTILEUP" || e->getID() == "SPEEDUPTILEDOWN")) ||
+                ((de->getID() == "SPEEDUPTILEUP" || de->getID() == "SPEEDUPTILEDOWN") && e->getID() == "ENEMY")) {
 
+                // Skip processing collision between enemy and speed tile
+                continue;
+            }
 
 
 
@@ -1010,6 +1032,7 @@ void ScenePlay::sCollision(){
 
                     auto& flag = (de->getID() == "FLAG" || de->getID() == "LUCKYFLAG" || de->getID() == "SPECIALFLAG") ? de : e;
 
+                    
                     if (flag->getID() == "FLAG") {
                         gameEngine->playSound("FLAG");
                         score += 200;
@@ -1025,6 +1048,25 @@ void ScenePlay::sCollision(){
 
 
                     flag->destroy();        //Flags dissapear just need to implement score collection now 
+                    std::cout << flags << std::endl;
+                    flags--;
+
+                    if (flags == 0) {
+                        roundClear=true;
+
+                        gameEngine->stopMusic("GAMEPLAYMUSIC");
+                        gameEngine->playSound("ROUNDCLEAR");
+                        /*
+                        float depletionRate = 1.0f;
+                        
+                            e->getComponent<CLifespan>().remaining -= depletionRate;
+                            score += (int)(e->getComponent<CLifespan>().remaining);
+                            */
+                           
+                        
+                        //renderWinTransition(5);
+                        //gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
+                    }
 
                     continue;
 
@@ -1310,6 +1352,15 @@ void ScenePlay::sCollision(){
     }
 
 
+
+    void ScenePlay::stopAllEntities() {
+        
+    for (auto& e : entityManager.getEntities("DYNAMIC")) {
+        e->getComponent<CTransform>().velocity = { 0, 0 };
+        e->getComponent<CTransform>().position = e->getComponent<CTransform>().prevPosition;
+    }
+
+    }
 //Going to render startgame and end game transitions 
     void ScenePlay::renderStartTransition(float transitionDuration) {
         float elapsedTime = 0.0f;
@@ -1348,6 +1399,36 @@ void ScenePlay::sCollision(){
 
 
             std::string message = "Game Over!";
+
+            const Font& font = gameEngine->getAssets().getFont("orbitron");
+            // Draw the "Game Over" text in the center of the screen
+            int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
+            int screenWidth = GetScreenWidth();
+            int screenHeight = GetScreenHeight();
+            int textPosX = (screenWidth - textWidth) / 2;
+            int textPosY = screenHeight / 2 - 32; // Adjust for text height
+
+            DrawTextEx(font, message.c_str(), Vector2(textPosX, textPosY), 64, 1, WHITE);
+
+
+            // Calculate fade effect
+            //float alpha = (elapsedTime / transitionDuration) * 255;
+            //DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(fadeColor, alpha / 255.0f));
+
+            EndDrawing();
+
+            elapsedTime += GetFrameTime();
+        }
+    }
+
+    void ScenePlay::renderWinTransition(float transitionDuration) {
+        float elapsedTime = 0.0f;
+        while (elapsedTime < transitionDuration) {
+            BeginDrawing();
+            ClearBackground(BLACK);
+
+
+            std::string message = "Course Complete!";
 
             const Font& font = gameEngine->getAssets().getFont("orbitron");
             // Draw the "Game Over" text in the center of the screen
@@ -1474,6 +1555,8 @@ void ScenePlay::sCollision(){
 
         // Render the fuel gauge
         std::string fuel = "Fuel";
+        
+        
 
         int fuelTextWidth = MeasureTextEx(font, fuel.c_str(), 64, 1).x; // Get the width of the text
         int fuelTextPosX = sidebarX + 130;
@@ -1499,6 +1582,7 @@ void ScenePlay::sCollision(){
 
         DrawRectangle(fuelX, gaugeY, fuelWidth, gaugeHeight, YELLOW); // The fuel level
 
+        
 
         // Render the high score area
         int highScoreY = sidebarY + 50; // Position Y of the high score area
@@ -1579,7 +1663,7 @@ void ScenePlay::sRender(){
 void ScenePlay::sGUI(){
     rlImGuiBegin();
     ImGui::SetNextWindowSize(ImVec2(400, 350));
-        ImGui::Begin("Zelda 0.5",NULL,ImGuiWindowFlags_NoResize);
+        ImGui::Begin("RallyX 0.0001",NULL,ImGuiWindowFlags_NoResize);
             ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
             if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
             {
@@ -1592,7 +1676,7 @@ void ScenePlay::sGUI(){
                     ImGui::Checkbox("Vision Debug",&renderVisionDebug);
                     ImGui::Checkbox("Grid",&renderGridLines);
                     ImGui::SeparatorText("Camera Controls");
-                    ImGui::Checkbox("Follow Camera",&followCam);
+                    //ImGui::Checkbox("Follow Camera",&followCam);
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Entities"))
@@ -1988,6 +2072,16 @@ void spawnFlags() {
 
 
 }
+void ScenePlay::checkFlags() {
+    for (auto& e : entityManager.getEntities("TILE")) {
+        if (e->getID() == "FLAG" || e->getID() == "SPECIALFLAG"|| e->getID()=="LUCKYFLAG") {
+            std::cout << flags << std::endl;
+            flags++;
+        }
+    }
+
+
+}
 
 
 /**
@@ -2219,6 +2313,28 @@ void ScenePlay::update(){
     sMusic();
     sCamera();
     sRender();
+
+
+    if (roundClear) {
+        float depletionRate = 10.0f; // Adjust this rate as needed
+        auto& playerLifespan = player->getComponent<CLifespan>();
+
+        if (playerLifespan.remaining > 0) {
+            // Deplete the fuel and add to the score simultaneously
+            playerLifespan.remaining -= depletionRate;
+            score += static_cast<int>(depletionRate);
+
+            // Ensure remaining fuel doesn't go below zero
+            if (playerLifespan.remaining < 0) {
+                playerLifespan.remaining = 0;
+            }
+        }
+        else {
+            // Fuel is depleted, proceed to next state if needed
+            renderWinTransition(4);
+             gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
+        }
+    }
 
     if(reload==true){
         reloadScene();

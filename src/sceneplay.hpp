@@ -41,6 +41,9 @@ class ScenePlay : public Scene{
         int gameLives=3;
         int round;
         int score=0; 
+        int flags=2;
+        bool roundClear = false;
+
 
         void init(const std::string& levelPath);
         void sAnimation();
@@ -58,6 +61,9 @@ class ScenePlay : public Scene{
         void spawnGameOver();
         void renderStartTransition(float duration);
         void renderGameOverTransition(float duration);
+        void renderWinTransition(float duration);
+        void checkFlags();
+        void stopAllEntities();
         
 
         void updateFacingDirection(const std::shared_ptr<Entity>& enemy, Vec2 velocity);
