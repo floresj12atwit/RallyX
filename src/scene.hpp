@@ -26,6 +26,10 @@ class Scene{
         bool renderTextures=true;               /* Should the entity textures be rendered */
         bool renderGridLines=false;             /* Should the grid lines be rendered */
         bool renderVisionDebug=false;           /* Should the AI vision be rendered */
+        bool renderDebug = false;
+
+        
+
 
         void renderBB();
         void renderTex();
@@ -36,6 +40,8 @@ class Scene{
         virtual void update() = 0;
         virtual void sDoAction(const Action& action)=0;
         virtual void sRender()=0;
+
+        int highscore = 0;
 
         Scene(GameEngine* gameEngine);
         Scene();

@@ -19,13 +19,24 @@ class SceneMenu : public Scene{
     float titlePosX = -300; // Starting off-screen to the left
     float namePosX = GetScreenWidth(); // Starting off-screen to the right
     float moveSpeed = 5.0f; // Speed of the movement
+    int highscore;
 
+    // New member for course positions
+    std::vector<Vector2> coursePositions;
 
+    int selectionBoxSize;
+    int redBoxSize;
+    std::vector<Vector2> selectionBoxPositions;
+
+    Texture2D backgroundTexture;
+    float highScorePosX = -500;  // Start off-screen to the left
+    float highScoreTargetX = 40;  // Target position (where it should end up)
+    float highScoreSpeed = 5.0f;  // Speed of the movement
 
     void init();
     void sRender() override;
     void sDoAction(const Action& action) override;
 public:
-    SceneMenu(GameEngine* gameEngine);
+    SceneMenu(GameEngine* gameEngine, int highscore);
     void update() override;
 };

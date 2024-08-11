@@ -25,6 +25,7 @@ class GameEngine{
         int tileSizeX=64;                                      /* X pixel size of each tile */
         int tileSizeY=64;                                      /* Y pixel size of each tile */
 
+
         void init(const std::string path);
         std::shared_ptr<Scene> currentScene();
     public:

@@ -58,7 +58,7 @@ Sound LINKYELP ./assets/sounds/LinkYelp.wav
 
 
 
-
+Font arcade ./assets/fonts/80sArcade.ttf
 
 Texture LIFESPRITE ./assets/textures/LifeSprite.png 
 

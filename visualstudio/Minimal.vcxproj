@@ -148,8 +148,10 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\physics.cpp" />
     <ClCompile Include="..\src\scene.cpp" />
+    <ClCompile Include="..\src\scenegameover.cpp" />
     <ClCompile Include="..\src\scenemenu.cpp" />
     <ClCompile Include="..\src\sceneplay.cpp" />
+    <ClCompile Include="..\src\scenestart.cpp" />
     <ClCompile Include="..\src\vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -177,8 +179,10 @@
     <ClInclude Include="..\src\gameengine.hpp" />
     <ClInclude Include="..\src\physics.hpp" />
     <ClInclude Include="..\src\scene.hpp" />
+    <ClInclude Include="..\src\scenegameover.hpp" />
     <ClInclude Include="..\src\scenemenu.hpp" />
     <ClInclude Include="..\src\sceneplay.hpp" />
+    <ClInclude Include="..\src\scenestart.hpp" />
     <ClInclude Include="..\src\vec2.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -41,7 +41,7 @@ class ScenePlay : public Scene{
         int gameLives=3;
         int round;
         int score=0; 
-        int flags=2;
+        int flags=1;
         bool roundClear = false;
 
 

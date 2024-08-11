@@ -12,6 +12,8 @@
 #include "vec2.hpp"
 #include "scenemenu.hpp"
 #include "sceneplay.hpp"
+#include "scenegameover.hpp"
+#include "scenestart.hpp"
 
 
 GameEngine::GameEngine(const std::string path){
@@ -62,8 +64,12 @@ void GameEngine::init(const std::string path){
     SetTargetFPS(60);
     //init assets
     assets.load(assetPath);
+
+    //Gonna make a proper starting screen 
+    // 
     //change scene to starting scene
-    changeScene("MENU",std::make_shared<SceneMenu>(this));
+    
+    changeScene("START",std::make_shared<SceneStart>(this));
     
 }
 

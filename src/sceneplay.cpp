@@ -1,11 +1,11 @@
 #include "sceneplay.hpp"
 #include "scenemenu.hpp"
+#include "scenegameover.hpp"
 #include <fstream>
 #include <iostream>
 #include <cstdio>
-#include <queue>
+
 #include <vector>
-#include <unordered_map>
 #include <algorithm>
 #include "physics.hpp"
 
@@ -61,6 +61,9 @@ void ScenePlay::init(const std::string& levelPath){
     registerAction(KEY_V,"VISION");
     registerAction(KEY_ESCAPE,"QUIT");
     registerAction(KEY_R,"RELOAD");
+
+    registerAction(KEY_J, "DEBUG");
+
 
     //Adding movement actions
     registerAction(KEY_W, "UP");
@@ -879,17 +882,18 @@ void ScenePlay::sMovement(){
                 
                 RoundOver();
                 if (gameLives == 0) {
-                    renderGameOverTransition(1);
+                    
                     //spawnGameOver();
                     gameEngine->stopMusic("GAMEPLAYMUSIC");
-                    gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
+                    gameEngine->changeScene("GAMEOVER", std::make_shared<SceneGameOver>(gameEngine, score, levelPath));
                    
                 }
             }
             else if (e->getID() == "PLAYER" && lifespan.remaining <= 0 && !roundClear) {
                 gameEngine->stopMusic("GAMEPLAYMUSIC");
-                renderGameOverTransition(1);
-                gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
+                //renderGameOverTransition(1);
+                gameEngine->changeScene("GAMEOVER", std::make_shared<SceneGameOver>(gameEngine, score, levelPath));
+                gameEngine->playMusic("MENUMUSIC");
             }
             
 
@@ -1000,6 +1004,16 @@ void ScenePlay::sCollision(){
                 continue;
             }
 
+            // Collision check for enemies with any type of flag
+            if ((de->getID() == "ENEMY" && (e->getID() == "SPECIALFLAG" || e->getID() == "LUCKYFLAG" || e->getID() == "FLAG")) ||
+                ((de->getID() == "SPECIALFLAG" || de->getID() == "LUCKYFLAG" || de->getID() == "FLAG") && e->getID() == "ENEMY")) {
+                // Skip processing collision between enemies and entities with flags
+                continue;
+            }
+
+
+
+        
 
 
             
@@ -1090,6 +1104,7 @@ void ScenePlay::sCollision(){
                     
                     //animationComponent.animation = gameEngine->getAssets().getAnimation("RALLYXPLAYERUP");
                     player->destroy();
+                    gameEngine->stopMusic("GAMEPLAYMUSIC");
                     gameLives--;
                     
                     
@@ -1361,36 +1376,144 @@ void ScenePlay::sCollision(){
     }
 
     }
-//Going to render startgame and end game transitions 
     void ScenePlay::renderStartTransition(float transitionDuration) {
+        // Load sprites and store them in variables
+        Texture2D rockSprite = LoadTexture("assets/textures/Rock1.png");
+        Texture2D enemySprite = LoadTexture("assets/textures/RallyXEnemyRight.png");
+        Texture2D flag1Sprite = LoadTexture("assets/textures/Flag.png");
+        Texture2D flag2Sprite = LoadTexture("assets/textures/SpecialFlag.png");
+        Texture2D flag3Sprite = LoadTexture("assets/textures/LuckyFlag.png");
+        Texture2D smokeInstructionSprite = LoadTexture("assets/textures/Smoke.png"); // Load the smoke instruction sprite
+        Texture2D playerSprite = LoadTexture("assets/textures/RallyXPlayer.png");
+
+        float scale = 5.0f; // Scaling factor
         float elapsedTime = 0.0f;
         while (elapsedTime < transitionDuration) {
             BeginDrawing();
-            ClearBackground(BLACK);
+            ClearBackground(GRAY);
 
-
-            std::string message = "Starting game...";
-
-            const Font& font = gameEngine->getAssets().getFont("orbitron");
-            // Draw the "Game Over" text in the center of the screen
-            int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
+            const Font& font = gameEngine->getAssets().getFont("arcade");
             int screenWidth = GetScreenWidth();
             int screenHeight = GetScreenHeight();
+
+            // Draw "Avoid These" at the top left
+            std::string avoidText = "Avoid These";
+            int avoidTextWidth = MeasureTextEx(font, avoidText.c_str(), 40, 1).x;
+            int avoidTextPosX = 50;
+            int avoidTextPosY = 50;
+            DrawTextEx(font, avoidText.c_str(), Vector2(avoidTextPosX, avoidTextPosY), 40, 1, WHITE);
+
+            // Draw rock sprite to the right of "Avoid These"
+            int spriteSpacing = 20;
+            DrawTextureEx(rockSprite,
+                Vector2(avoidTextPosX + avoidTextWidth + spriteSpacing, avoidTextPosY),
+                0.0f, scale, WHITE);
+
+            // Draw enemy sprite to the right of the rock sprite
+            DrawTextureEx(enemySprite,
+                Vector2(avoidTextPosX + avoidTextWidth + spriteSpacing * 2 + rockSprite.width * scale, avoidTextPosY + 40),
+                0.0f, scale, WHITE);
+
+            // Draw "Collect These" below "Avoid These"
+            std::string collectText = "Collect These";
+            int collectTextWidth = MeasureTextEx(font, collectText.c_str(), 40, 1).x;
+            int collectTextPosX = avoidTextPosX;
+            int collectTextPosY = avoidTextPosY + rockSprite.height * scale + 100;
+            DrawTextEx(font, collectText.c_str(), Vector2(collectTextPosX, collectTextPosY), 40, 1, WHITE);
+
+            // Draw flag sprites to the right of "Collect These"
+            int flag1PosX = collectTextPosX + collectTextWidth + spriteSpacing;
+            int flag1PosY = collectTextPosY;
+            DrawTextureEx(flag1Sprite,
+                Vector2(flag1PosX, flag1PosY),
+                0.0f, scale, WHITE);
+
+            int flag2PosX = flag1PosX + flag1Sprite.width * scale + spriteSpacing;
+            DrawTextureEx(flag2Sprite,
+                Vector2(flag2PosX, flag1PosY),
+                0.0f, scale, WHITE);
+
+            int flag3PosX = flag2PosX + flag2Sprite.width * scale + spriteSpacing;
+            DrawTextureEx(flag3Sprite,
+                Vector2(flag3PosX, flag1PosY),
+                0.0f, scale, WHITE);
+
+            // Draw "Before Fuel Runs Out!" at the bottom
+            std::string fuelText = "Before Fuel Runs Out!";
+            int fuelTextWidth = MeasureTextEx(font, fuelText.c_str(), 48, 1).x;
+            int fuelTextPosX = (screenWidth - fuelTextWidth) / 2;
+            int fuelTextPosY = screenHeight - 150;
+            DrawTextEx(font, fuelText.c_str(), Vector2(fuelTextPosX, fuelTextPosY), 48, 1, WHITE);
+
+            // Draw WASD controls at the middle right of the screen
+            int controlSquareSize = 64;
+            int controlSpacing = 10;
+            int controlRightMargin = 50; // Margin from the right edge
+
+            int controlsPosX = screenWidth - controlSquareSize - controlRightMargin - 80;
+            int controlsPosY = (screenHeight - controlSquareSize) / 2 - 50;
+
+            
+            // Draw control squares and text with the specified font
+            //DrawRectangle(controlsPosX, controlsPosY, controlSquareSize, controlSquareSize, WHITE); // Center square
+            DrawTextureEx(playerSprite, Vector2(controlsPosX+5, controlsPosY-15), 0.0f, scale, WHITE);
+            
+            DrawTextEx(font, "W", Vector2(controlsPosX + 24, controlsPosY - controlSquareSize - controlSpacing), 48, 1, WHITE);
+            //DrawRectangle(controlsPosX, controlsPosY - controlSquareSize - controlSpacing, controlSquareSize, controlSquareSize, WHITE); // Top square
+
+            DrawTextEx(font, "S", Vector2(controlsPosX + 24, controlsPosY + controlSquareSize + controlSpacing), 48, 1, WHITE);
+            //DrawRectangle(controlsPosX, controlsPosY + controlSquareSize + controlSpacing, controlSquareSize, controlSquareSize, WHITE); // Bottom square
+
+            DrawTextEx(font, "A", Vector2(controlsPosX - controlSquareSize - controlSpacing + 24, controlsPosY), 48, 1, WHITE);
+            //DrawRectangle(controlsPosX - controlSquareSize - controlSpacing, controlsPosY, controlSquareSize, controlSquareSize, WHITE); // Left square
+
+            DrawTextEx(font, "D", Vector2(controlsPosX + controlSquareSize + controlSpacing + 24, controlsPosY), 48, 1, WHITE);
+            //DrawRectangle(controlsPosX + controlSquareSize + controlSpacing, controlsPosY, controlSquareSize, controlSquareSize, WHITE); // Right squareze, controlSquareSize, WHITE); // Right square
+
+            //Draw "Controls" text
+            // Draw "Before Fuel Runs Out!" at the bottom
+            std::string controls = "Controls";
+            int controlWidth = MeasureTextEx(font, controls.c_str(), 48, 1).x;
+ 
+            DrawTextEx(font, controls.c_str(), Vector2(controlsPosX- 200, controlsPosY- 180), 48, 1, WHITE);
+
+
+            // Draw "Press Space to use Smoke" instruction text and sprite at the bottom of the screen
+            std::string smokeInstructionText = "Press Space to use";
+            int smokeInstructionTextWidth = MeasureTextEx(font, smokeInstructionText.c_str(), 40, 1).x;
+            int smokeInstructionTextPosX = 50;
+            int smokeInstructionTextPosY = avoidTextPosY + rockSprite.height * scale + 300;;
+            DrawTextEx(font, smokeInstructionText.c_str(), Vector2(smokeInstructionTextPosX, smokeInstructionTextPosY), 40, 1, WHITE);
+
+            int smokeInstructionWidth = smokeInstructionSprite.width * scale;
+            int smokeInstructionHeight = smokeInstructionSprite.height * scale;
+            int smokeInstructionSpritePosX = (screenWidth - smokeInstructionWidth) / 2 + 220;
+            int smokeInstructionSpritePosY = smokeInstructionTextPosY - 90; // Position below the text
+            DrawTextureEx(smokeInstructionSprite,
+                Vector2(smokeInstructionSpritePosX, smokeInstructionSpritePosY),
+                0.0f, scale, WHITE);
+
+            // Draw transition message
+            std::string message = "Starting game...";
+            int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x;
             int textPosX = (screenWidth - textWidth) / 2;
-            int textPosY = screenHeight / 2 - 32; // Adjust for text height
-
+            int textPosY = screenHeight - 80;
             DrawTextEx(font, message.c_str(), Vector2(textPosX, textPosY), 64, 1, WHITE);
-
-
-            // Calculate fade effect
-            //float alpha = (elapsedTime / transitionDuration) * 255;
-            //DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(fadeColor, alpha / 255.0f));
 
             EndDrawing();
 
             elapsedTime += GetFrameTime();
+        }
+
+        // Unload sprites
+        UnloadTexture(rockSprite);
+        UnloadTexture(enemySprite);
+        UnloadTexture(flag1Sprite);
+        UnloadTexture(flag2Sprite);
+        UnloadTexture(flag3Sprite);
+        UnloadTexture(smokeInstructionSprite); // Unload the smoke instruction sprite
+        UnloadTexture(playerSprite);
     }
- }
     void ScenePlay::renderGameOverTransition(float transitionDuration) {
         float elapsedTime = 0.0f;
         while (elapsedTime < transitionDuration) {
@@ -1400,7 +1523,7 @@ void ScenePlay::sCollision(){
 
             std::string message = "Game Over!";
 
-            const Font& font = gameEngine->getAssets().getFont("orbitron");
+            const Font& font = gameEngine->getAssets().getFont("arcade");
             // Draw the "Game Over" text in the center of the screen
             int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
             int screenWidth = GetScreenWidth();
@@ -1416,6 +1539,7 @@ void ScenePlay::sCollision(){
             //DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(fadeColor, alpha / 255.0f));
 
             EndDrawing();
+
 
             elapsedTime += GetFrameTime();
         }
@@ -1427,10 +1551,10 @@ void ScenePlay::sCollision(){
             BeginDrawing();
             ClearBackground(BLACK);
 
-
+            highscore = score;
             std::string message = "Course Complete!";
-
-            const Font& font = gameEngine->getAssets().getFont("orbitron");
+            
+            const Font& font = gameEngine->getAssets().getFont("arcade");
             // Draw the "Game Over" text in the center of the screen
             int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
             int screenWidth = GetScreenWidth();
@@ -1453,7 +1577,7 @@ void ScenePlay::sCollision(){
 
     void ScenePlay::renderSideBar() {
 
-        const Font& font = gameEngine->getAssets().getFont("orbitron");
+        const Font& font = gameEngine->getAssets().getFont("arcade");
 
         // Define sidebar dimensions and position
         auto& playerPos = player->getComponent<CTransform>().position;
@@ -1560,7 +1684,7 @@ void ScenePlay::sCollision(){
 
         int fuelTextWidth = MeasureTextEx(font, fuel.c_str(), 64, 1).x; // Get the width of the text
         int fuelTextPosX = sidebarX + 130;
-        int fuelTextPosY = sidebarY + 180;
+        int fuelTextPosY = sidebarY + 170;
         DrawTextEx(font, fuel.c_str(), Vector2(fuelTextPosX, fuelTextPosY), 32, 1, WHITE);
 
 
@@ -1660,113 +1784,118 @@ void ScenePlay::sRender(){
  * Renders the ImGUI
  * 
  */
-void ScenePlay::sGUI(){
+void ScenePlay::sGUI() {
+
+
+    if(renderDebug){
     rlImGuiBegin();
-    ImGui::SetNextWindowSize(ImVec2(400, 350));
-        ImGui::Begin("RallyX 0.0001",NULL,ImGuiWindowFlags_NoResize);
-            ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-            if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
-            {
-                if (ImGui::BeginTabItem("Controls"))
-                {
-                    ImGui::SeparatorText("Rendering Controls");
-                    ImGui::Checkbox("Textures",&renderTextures);
-                    ImGui::Checkbox("Health Bar",&renderHealth);
-                    ImGui::Checkbox("Bounding Boxes",&renderBoundingBox);
-                    ImGui::Checkbox("Vision Debug",&renderVisionDebug);
-                    ImGui::Checkbox("Grid",&renderGridLines);
-                    ImGui::SeparatorText("Camera Controls");
-                    //ImGui::Checkbox("Follow Camera",&followCam);
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Entities"))
-                {
-                    int count=0;
-                    if (ImGui::TreeNode("By Tag")){
-                        //TODO Add list of all entities by tag
-                        //See your Assignment 2
-                        //Sort the tree nodes by type and add a new tree node when a new entity is detected 
-                        for (const auto& [tag, entityList] : entityManager.getEntityMap()) {
-                            if (ImGui::TreeNode(tag.c_str())) {
-                                for (const auto& entity : entityList) {
+
+    ImGui::SetNextWindowSize(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+    ImGui::Begin("RallyX 0.0001", NULL, ImGuiWindowFlags_NoResize);
+    ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+    if (ImGui::BeginTabBar("MyTabBar", tab_bar_flags))
+    {
+        if (ImGui::BeginTabItem("Controls"))
+        {
+            ImGui::SeparatorText("Rendering Controls");
+            ImGui::Checkbox("Textures", &renderTextures);
+            ImGui::Checkbox("Health Bar", &renderHealth);
+            ImGui::Checkbox("Bounding Boxes", &renderBoundingBox);
+            ImGui::Checkbox("Vision Debug", &renderVisionDebug);
+            ImGui::Checkbox("Grid", &renderGridLines);
+            ImGui::SeparatorText("Camera Controls");
+            //ImGui::Checkbox("Follow Camera",&followCam);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Entities"))
+        {
+            int count = 0;
+            if (ImGui::TreeNode("By Tag")) {
+                //TODO Add list of all entities by tag
+                //See your Assignment 2
+                //Sort the tree nodes by type and add a new tree node when a new entity is detected 
+                for (const auto& [tag, entityList] : entityManager.getEntityMap()) {
+                    if (ImGui::TreeNode(tag.c_str())) {
+                        for (const auto& entity : entityList) {
 
 
 
-                                    //ImGui::ColorButton("Color", entityColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(20, 20));
-
-                                    ImGui::PushID(entity->getID().c_str());
-                                    
-                                    if (ImGui::Button("D")) {
-                                        /*
-                                        if (entity->getID() == "PLAYER") {      //game resets when player is deleted 
-                                            reload=true;
-                                        }
-                                        else */
-                                            entity->destroy(); // Call the destroy method for the entity
-                                    }
-                                    
-                                    ImGui::PopID();
-                                    ImGui::SameLine();
-                                    ImGui::Text("%s %s", entity->getTag().c_str(), entity->getID().c_str());
-
-                                    if (entity->hasComponent<CTransform>()) {
-                                        ImGui::SameLine();
-                                        const auto& transform = entity->getComponent<CTransform>();
-                                        ImGui::Text("Pos: (%.2f, %.2f)", transform.position.x, transform.position.y);
-                                    }
-                                   
-                                }
-                                ImGui::TreePop();
-
-
-
-                            }
-
-
-
-                        }
-
-
-                        ImGui::TreePop();       
-                    }
-                    if (ImGui::TreeNode("All Entitites")){
-                        //TODO Add list of all entities
-                        //See your Assignment 2
-                        for (const auto& entity : entityManager.getEntities()) {
-
-
-
+                            //ImGui::ColorButton("Color", entityColor, ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(20, 20));
 
                             ImGui::PushID(entity->getID().c_str());
-                           
-                            if (ImGui::Button("D")) {
 
-                                if (entity->getTag() == "PLAYER") {
+                            if (ImGui::Button("D")) {
+                                /*
+                                if (entity->getID() == "PLAYER") {      //game resets when player is deleted
                                     reload=true;
                                 }
-                                else
-                                    entity->destroy(); // Call the destroy method for the entity
+                                else */
+                                entity->destroy(); // Call the destroy method for the entity
                             }
-                            
+
                             ImGui::PopID();
                             ImGui::SameLine();
                             ImGui::Text("%s %s", entity->getTag().c_str(), entity->getID().c_str());
-                            ImGui::SameLine();
+
                             if (entity->hasComponent<CTransform>()) {
                                 ImGui::SameLine();
                                 const auto& transform = entity->getComponent<CTransform>();
                                 ImGui::Text("Pos: (%.2f, %.2f)", transform.position.x, transform.position.y);
                             }
-                        }
 
+                        }
                         ImGui::TreePop();
+
+
+
                     }
-                    ImGui::EndTabItem();
+
+
+
                 }
+
+
+                ImGui::TreePop();
             }
-            ImGui::EndTabBar();
-        ImGui::End();
-        rlImGuiEnd();
+            if (ImGui::TreeNode("All Entitites")) {
+                //TODO Add list of all entities
+                //See your Assignment 2
+                for (const auto& entity : entityManager.getEntities()) {
+
+
+
+
+                    ImGui::PushID(entity->getID().c_str());
+
+                    if (ImGui::Button("D")) {
+
+                        if (entity->getTag() == "PLAYER") {
+                            reload = true;
+                        }
+                        else
+                            entity->destroy(); // Call the destroy method for the entity
+                    }
+
+                    ImGui::PopID();
+                    ImGui::SameLine();
+                    ImGui::Text("%s %s", entity->getTag().c_str(), entity->getID().c_str());
+                    ImGui::SameLine();
+                    if (entity->hasComponent<CTransform>()) {
+                        ImGui::SameLine();
+                        const auto& transform = entity->getComponent<CTransform>();
+                        ImGui::Text("Pos: (%.2f, %.2f)", transform.position.x, transform.position.y);
+                    }
+                }
+
+                ImGui::TreePop();
+            }
+            ImGui::EndTabItem();
+        }
+    }
+    ImGui::EndTabBar();
+    ImGui::End();
+    rlImGuiEnd();
+}
 }
 
 /**
@@ -1853,10 +1982,12 @@ void ScenePlay::sDoAction(const Action& action){
             renderVisionDebug=!renderVisionDebug;
         }
         if(action.getName()=="QUIT"){
-            gameEngine->changeScene("MENU",std::make_shared<SceneMenu>(gameEngine));
+            gameEngine->changeScene("MENU",std::make_shared<SceneMenu>(gameEngine,highscore));
         }
         if(action.getName()=="RELOAD"){
             reload=true;
+        }if (action.getName() == "DEBUG") {
+            renderDebug = !renderDebug;
         }
 
         //Adding player actions
@@ -2332,7 +2463,10 @@ void ScenePlay::update(){
         else {
             // Fuel is depleted, proceed to next state if needed
             renderWinTransition(4);
-             gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine));
+             gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine, highscore));
+             
+             
+             gameEngine->playMusic("MENUMUSIC");
         }
     }
 
