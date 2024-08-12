@@ -271,15 +271,7 @@ void ScenePlay::loadLevel(const std::string& levelPath){
 
 }
 /*
-Animation LINKSTANDD LINKSTANDD 1 1 4
-Animation LINKSTANDR LINKSTANDR 1 1 4
-Animation LINKSTANDU LINKSTANDU 1 1 4
-Animation LINKUSED LINKUSED 1 1 4
-Animation LINKUSER LINKUSER 1 1 4
-Animation LINKUSEU LINKUSEU 1 1 4
-Animation LINKWALKD LINKWALKD 2 5 4
-Animation LINKWALKR LINKWALKR 2 5 4
-Animation LINKWALKU LINKWALKU 2 5 4
+
 
 
 
@@ -1551,11 +1543,13 @@ void ScenePlay::sCollision(){
             BeginDrawing();
             ClearBackground(BLACK);
 
-            highscore = score;
+            highscore = score; // Update highscore
             std::string message = "Course Complete!";
-            
+            std::string highscoreMessage = "Score: " + std::to_string(highscore);
+
             const Font& font = gameEngine->getAssets().getFont("arcade");
-            // Draw the "Game Over" text in the center of the screen
+
+            // Draw the "Course Complete!" text in the center of the screen
             int textWidth = MeasureTextEx(font, message.c_str(), 64, 1).x; // Get the width of the text
             int screenWidth = GetScreenWidth();
             int screenHeight = GetScreenHeight();
@@ -1564,6 +1558,12 @@ void ScenePlay::sCollision(){
 
             DrawTextEx(font, message.c_str(), Vector2(textPosX, textPosY), 64, 1, WHITE);
 
+            // Draw the high score text below the "Course Complete!" text
+            int highscoreTextWidth = MeasureTextEx(font, highscoreMessage.c_str(), 48, 1).x; // Get the width of the high score text
+            int highscoreTextPosX = (screenWidth - highscoreTextWidth) / 2;
+            int highscoreTextPosY = textPosY + 80; // Position below the "Course Complete!" text
+
+            DrawTextEx(font, highscoreMessage.c_str(), Vector2(highscoreTextPosX, highscoreTextPosY), 48, 1, WHITE);
 
             // Calculate fade effect
             //float alpha = (elapsedTime / transitionDuration) * 255;
@@ -1574,6 +1574,7 @@ void ScenePlay::sCollision(){
             elapsedTime += GetFrameTime();
         }
     }
+
 
     void ScenePlay::renderSideBar() {
 
@@ -1683,7 +1684,7 @@ void ScenePlay::sCollision(){
         
 
         int fuelTextWidth = MeasureTextEx(font, fuel.c_str(), 64, 1).x; // Get the width of the text
-        int fuelTextPosX = sidebarX + 130;
+        int fuelTextPosX = sidebarX + 100;
         int fuelTextPosY = sidebarY + 170;
         DrawTextEx(font, fuel.c_str(), Vector2(fuelTextPosX, fuelTextPosY), 32, 1, WHITE);
 
@@ -2180,8 +2181,7 @@ void  ScenePlay::RoundOver() {
             e->getComponent<CTransform>().position = enemyStartPositions[enemyIndex];
             e->getComponent<CTransform>().prevPosition = enemyStartPositions[enemyIndex];
 
-
-            
+           
             e->getComponent<CTransform>().velocity = Vec2(0.0f, 0.0f);
             e->getComponent<CState>().state = "CHASING";  // Or the appropriate initial state
 
@@ -2191,18 +2191,8 @@ void  ScenePlay::RoundOver() {
 
 }
 //Take user to game over screen 
-void GameOver() {
 
 
-
-}
-
-//Randomly spawn flags on game start ensure that tile they are placed on is not already occupied
-void spawnFlags() {
-
-
-
-}
 void ScenePlay::checkFlags() {
     for (auto& e : entityManager.getEntities("TILE")) {
         if (e->getID() == "FLAG" || e->getID() == "SPECIALFLAG"|| e->getID()=="LUCKYFLAG") {
@@ -2300,97 +2290,6 @@ void ScenePlay::spawnSmoke() {
 }
 
 
-/**
- * Spawns a sword at the player's location
- */
-void ScenePlay::spawnSword() {
-    //TODO: Spawn sword using the players location and facing
-    /*
-     Ensure that it spawns far enough from the player, has a bounding box, is rotated properly, and has a lifespan of 8-10 frames
-
-     copy bullet code from previous project
-
-    */
-    Vec2 playerPos = player->getComponent<CTransform>().position;
-    Vec2 direction = player->getComponent<CTransform>().facing;
-
-    std::shared_ptr<Entity> sword;
-    sword = entityManager.addEntity("DYNAMIC", "SWORD");
-    sword->addComponent<CState>("ATTACKING");   //I don't think the sword needs an animation state but it now has one 
-    //player->getComponent<CState>().state = "ATTACK";
-    sword->addComponent<CAnimation>(gameEngine->getAssets().getAnimation("SWORD"), true);
-    sword->addComponent<CLifespan>(10);
-    sword->addComponent<CTransform>();
-    sword->addComponent<CDamage>();
-    int swordHeight = sword->getComponent<CAnimation>().animation.getScaledSize().x;
-    int swordWidth = sword->getComponent<CAnimation>().animation.getScaledSize().y;
-    //sword->addComponent<CBoundingBox>(Vec2(swordWidth, swordHeight));
-
-    //float swordDistance = 30.0f;
-
-    // Get player size
-    Vec2 playerSize = player->getComponent<CBoundingBox>().size;
-
-    // Calculate the sword's position and rotation
-    Vec2 swordPos;
-    float rotation;
-    float swordDistance = playerSize.x; // Adjus t this value to fine-tune the sword's distance from the player
-
-
-
-    //std::cout << direction.x << std::endl;
-    //std::cout << direction.y << std::endl;
-
-    if (direction.x > 0) { // Facing right
-        std::cout << "Attacking right" << std::endl;
-        swordPos.x = playerPos.x + swordDistance + 8;
-        swordPos.y = playerPos.y;
-        rotation = 90.0f;
-    }
-    else if (direction.x < 0) { // Facing left
-        std::cout << "Attacking Left" << std::endl;
-        swordPos.x = playerPos.x - swordDistance - 8;
-        swordPos.y = playerPos.y;
-        rotation = 270.0f;
-    }
-    else if (direction.y < 0) { // Facing up
-        swordPos.x = playerPos.x;
-        swordPos.y = playerPos.y - swordDistance - 12;
-        rotation = 0.0f;
-
-    }
-    else { // Facing down
-        std::cout << "Attacking Down" << std::endl;
-        swordPos.x = playerPos.x;
-        swordPos.y = playerPos.y + swordDistance + 8;
-        rotation = 180.0f;
-    }
-
-    // Adjust the position so that the bottom middle of the sword is at the calculated position
-    //swordPos.x -= sin(rotation) * swordHeight / 2;
-    //swordPos.y += cos(rotation) * swordHeight / 2;
-
-    if (direction.y < 0 || direction.y>0) { // Facing up or down change bbox generation
-        sword->addComponent<CBoundingBox>(Vec2(swordHeight, swordWidth));
-        sword->addComponent<CTransform>(swordPos, Vec2(0.0f, 0.0f), rotation);
-
-    }
-    else {
-
-
-    sword->addComponent<CBoundingBox>(Vec2(swordWidth, swordHeight));
-    sword->addComponent<CTransform>(swordPos, Vec2(0.0f, 0.0f), rotation);
-    
-   
-}
-
-   // sword->addComponent<CTransform>(Vec2(playerPos.x+(swordDistance*direction.x), playerPos.y+(swordDistance*direction.y)), Vec2(0.0f, 0.0f), 0.0f);
-    
-
-
-    //transform.angle = atan2(direction.y, (direction.x) * 180.0 / PI); // Adjust rotation 
-
-}
 
 /**
  * Reloads this play scene

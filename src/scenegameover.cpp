@@ -44,6 +44,11 @@ void SceneGameOver::sRender() {
     Vector2 scorePosition = Vector2((GetScreenWidth() - MeasureTextEx(font, scoreText.c_str(), 36, 1).x) / 2, 120);
     DrawTextEx(font, scoreText.c_str(), scorePosition, 36, 1, WHITE);
 
+    // Draw "Thanks for playing!" text
+    std::string thanksText = "Thanks for playing! :D";
+    Vector2 thanksPosition = Vector2((GetScreenWidth() - MeasureTextEx(font, thanksText.c_str(), 36, 1).x) / 2, GetScreenHeight() / 2  + 100);
+    DrawTextEx(font, thanksText.c_str(), thanksPosition, 36, 1, WHITE);
+
     // Calculate menu position
     float menuItemHeight = 60;
     float totalMenuHeight = menuStrings.size() * menuItemHeight;
@@ -86,7 +91,7 @@ void SceneGameOver::sDoAction(const Action& action) {
             }
             else if (selectedMenuItem == 1) {
                 // Go to the main menu
-                gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine,highscore));
+                gameEngine->changeScene("MENU", std::make_shared<SceneMenu>(gameEngine,score));
                 gameEngine->playMusic("MENUMUSIC");
             }
         }

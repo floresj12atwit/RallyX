@@ -19,3 +19,6 @@ I have included the required static libraries for Mac, Windows, and Linux. So, o
 **For Mac**, I have included raylib libraries for Arm, x86, and x86_64. The makefile will automatically determine the architecture and link as appropriate. The final executable will have a `.x` extension and be located in the `bin` directory.
 
 **For Linux**, I have included the appropriate static libraries (compiled in WSL using Ubuntu 20.04.6 LTS). The makefile will automatically link the correct libraries. Upon successful compilation, the final executable will have a `.x` extension and be located in the `bin` directory.
+
+## Joshua Flores
+Minimal solution was repurposed for my project
