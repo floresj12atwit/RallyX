@@ -357,7 +357,8 @@ void ScenePlay::sAnimation(){
     }
 
 
-    //Going to handle enemy animations now need a loop because there's more than 1 
+    //Going to handle 
+//  animations now need a loop because there's more than 1 
     // Handle Enemy Animations
     for (auto& e : entityManager.getEntities("DYNAMIC")) {
         if (e->getID() == "ENEMY") {
