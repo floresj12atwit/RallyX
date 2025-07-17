@@ -1,9 +1,11 @@
-# Final Project for Game Engine Development
+# Final Project for Game Engine Development Rally X
+## Overview
+This repo contains my remake of an 80's arcade game Rally X using a C++ game engine developed in class.
 
 ## Purpose
-This repository contains a minimal C++ project that can be used as "blank" starter code for the Game Engine Development Final Project.  The project has raylib (https://www.raylib.com/) configured for graphics and user input and Dear ImGui (https://github.com/ocornut/imgui) for debug GUI.
+The project has raylib (https://www.raylib.com/) configured for graphics and user input and Dear ImGui (https://github.com/ocornut/imgui) for debug GUI.
 
-## Usage
+## Usage (The below was provided by Professor Micah Schuster)
 
 The project contains two ways to build the executable:
 
@@ -19,6 +21,3 @@ I have included the required static libraries for Mac, Windows, and Linux. So, o
 **For Mac**, I have included raylib libraries for Arm, x86, and x86_64. The makefile will automatically determine the architecture and link as appropriate. The final executable will have a `.x` extension and be located in the `bin` directory.
 
 **For Linux**, I have included the appropriate static libraries (compiled in WSL using Ubuntu 20.04.6 LTS). The makefile will automatically link the correct libraries. Upon successful compilation, the final executable will have a `.x` extension and be located in the `bin` directory.
-
-## Joshua Flores
-Minimal solution was repurposed for my project
