@@ -1,5 +1,5 @@
 # Final Project for Game Engine Development Rally X
-## Overview
+## Project Overview
 This repo contains my remake of an 80's arcade game Rally X using a C++ game engine developed in class.
 
 ## Purpose
